@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/timer_provider.dart';
+import '../../calendar/providers/event_provider.dart';
 import '../widgets/timer_card.dart';
 import 'timer_editor_screen.dart';
 
@@ -9,7 +9,8 @@ class TimersScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final timers = ref.watch(timersProvider);
+    final allEvents = ref.watch(eventsProvider);
+    final timers = allEvents.where((e) => e.isTimer).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -21,15 +22,14 @@ class TimersScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         itemCount: timers.length,
         itemBuilder: (context, index) {
-          final timer = timers[index];
+          final event = timers[index];
           return TimerCard(
-            timerEntity: timer,
+            event: event,
             onTap: () {
-              //открыть редактор
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => TimerEditorScreen(timer: timer),
+                  builder: (context) => TimerEditorScreen(timer: event),
                 ),
               );
             },
@@ -38,7 +38,6 @@ class TimersScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          //создание нового таймера
           Navigator.push(
             context,
             MaterialPageRoute(

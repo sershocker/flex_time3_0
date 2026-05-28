@@ -2,6 +2,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:flutter/foundation.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -14,9 +15,7 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   Future<void> init() async {
-
     tz.initializeTimeZones();
-    //час пояс
     try {
       final tzResult = await FlutterTimezone.getLocalTimezone();
       String timeZoneName = tzResult is String
@@ -25,52 +24,62 @@ class NotificationService {
 
       tz.setLocalLocation(tz.getLocation(timeZoneName));
     } catch (e) {
-      tz.setLocalLocation(tz.getLocation('Europe/Moscow'));
+      debugPrint('NotificationService: error setting timezone: $e');
+      try {
+        tz.setLocalLocation(tz.getLocation('Europe/Moscow'));
+      } catch (e2) {
+        debugPrint('NotificationService: fallback timezone error: $e2');
+      }
     }
 
-    final AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/launcher_icon');
 
-    final DarwinInitializationSettings initializationSettingsIOS =
+    const DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
-          requestAlertPermission: false,
-          requestBadgePermission: false,
-          requestSoundPermission: false,
-        );
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
+    );
 
-    final InitializationSettings initializationSettings =
+    const InitializationSettings initializationSettings =
         InitializationSettings(
-          android: initializationSettingsAndroid,
-          iOS: initializationSettingsIOS,
-        );
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsIOS,
+    );
 
-    await _notificationsPlugin.initialize(settings: initializationSettings);
+    try {
+      await _notificationsPlugin.initialize(
+        settings: initializationSettings,
+      );
+    } catch (e) {
+      debugPrint('NotificationService: initialization error: $e');
+    }
   }
 
   Future<bool> requestPermissions() async {
     bool? granted = false;
-
-    final androidImplementation = _notificationsPlugin
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
-    if (androidImplementation != null) {
-      granted = await androidImplementation.requestNotificationsPermission();
-      await androidImplementation.requestExactAlarmsPermission();
+    try {
+      final androidImplementation = _notificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      if (androidImplementation != null) {
+        granted = await androidImplementation.requestNotificationsPermission();
+        await androidImplementation.requestExactAlarmsPermission();
+      }
+      final iosImplementation = _notificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>();
+      if (iosImplementation != null) {
+        granted = await iosImplementation.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+      }
+    } catch (e) {
+      debugPrint('NotificationService: requestPermissions error: $e');
     }
-
-    final iosImplementation = _notificationsPlugin
-        .resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin
-        >();
-    if (iosImplementation != null) {
-      granted = await iosImplementation.requestPermissions(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
-    }
-
     return granted ?? false;
   }
 
@@ -83,18 +92,16 @@ class NotificationService {
     required bool notify1Hour,
     required bool notify1Day,
   }) async {
-    //отмена старых уведомлений
     await cancelEventNotifications(eventId);
 
     tz.Location deviceLocation;
     try {
       final tzResult = await FlutterTimezone.getLocalTimezone();
-      String tzName = tzResult is String
-          ? tzResult
-          : (tzResult as dynamic).identifier;
+      String tzName =
+          tzResult is String ? tzResult : (tzResult as dynamic).identifier;
       deviceLocation = tz.getLocation(tzName);
     } catch (e) {
-      deviceLocation = tz.getLocation('UTC'); //резерв
+      deviceLocation = tz.getLocation('UTC');
     }
 
     const details = NotificationDetails(
@@ -108,47 +115,32 @@ class NotificationService {
       iOS: DarwinNotificationDetails(),
     );
 
-    //установка таймера
     Future<void> scheduleOffset(
-      int offsetId,
-      Duration offset,
-      String bodyText,
-    ) async {
+        int offsetId, Duration offset, String bodyText) async {
       final scheduledTime = eventDate.subtract(offset);
-
       if (scheduledTime.isBefore(DateTime.now())) return;
 
       final targetDate = tz.TZDateTime.from(scheduledTime, deviceLocation);
 
       try {
+        final int notificationId = (eventId.abs() * 10 + offsetId) & 0x7FFFFFFF;
+
         await _notificationsPlugin.zonedSchedule(
-          id: eventId * 10 + offsetId,
+          id: notificationId,
           title: 'Напоминание: $title',
           body: bodyText,
           scheduledDate: targetDate,
           notificationDetails: details,
           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         );
-        print('Будильник заведен!');
       } catch (e) {
-        print('ошибка$e');
+        debugPrint('Ошибка установки уведомления: $e');
       }
     }
 
-    //установка уведомлений
-    if (notifyAtEvent) {
-      await scheduleOffset(
-        0,
-        Duration.zero,
-        'Событие началось!',
-      );
-    }
+    if (notifyAtEvent) await scheduleOffset(0, Duration.zero, 'Событие началось!');
     if (notify15Min) {
-      await scheduleOffset(
-        1,
-        const Duration(minutes: 15),
-        'Начнется через 15 минут',
-      );
+      await scheduleOffset(1, const Duration(minutes: 15), 'Начнется через 15 минут');
     }
     if (notify1Hour) {
       await scheduleOffset(2, const Duration(hours: 1), 'Начнется через 1 час');
@@ -157,20 +149,18 @@ class NotificationService {
       final timeStr =
           '${eventDate.hour.toString().padLeft(2, '0')}:${eventDate.minute.toString().padLeft(2, '0')}';
       await scheduleOffset(
-        3,
-        const Duration(days: 1),
-        'Начнется завтра в $timeStr',
-      );
+          3, const Duration(days: 1), 'Начнется завтра в $timeStr');
     }
   }
 
-  //отмена уведомлений
   Future<void> cancelEventNotifications(int eventId) async {
-    await _notificationsPlugin.cancel(id: eventId * 10 + 0);
-    await _notificationsPlugin.cancel(id: eventId * 10 + 1);
-    await _notificationsPlugin.cancel(id: eventId * 10 + 2);
-    await _notificationsPlugin.cancel(id: eventId * 10 + 3);
-    print('удодомления события $eventId отменено.');
-    await _notificationsPlugin.cancel(id: eventId);
+    for (int i = 0; i <= 3; i++) {
+      final int notificationId = (eventId.abs() * 10 + i) & 0x7FFFFFFF;
+      try {
+        await _notificationsPlugin.cancel(id: notificationId);
+      } catch (e) {
+        debugPrint('NotificationService: cancel error: $e');
+      }
+    }
   }
 }

@@ -31,11 +31,11 @@ class DayTypesNotifier extends StateNotifier<List<DayType>> {
 
   Future<void> _initDefaults() async {
     final defaults = [
-      DayType()..name = 'День'..backgroundColor = Colors.amber.value..textColor = Colors.black.value,
-      DayType()..name = 'Ночь'..backgroundColor = Colors.indigo.value..textColor = Colors.white.value,
+      DayType()..name = 'День'..backgroundColor = Colors.amber.value..textColor = Colors.black.value..startHour = 8..startMinute = 0..endHour = 20..endMinute = 0,
+      DayType()..name = 'Ночь'..backgroundColor = Colors.indigo.value..textColor = Colors.white.value..startHour = 20..startMinute = 0..endHour = 8..endMinute = 0,
       DayType()..name = 'Отсыпной'..backgroundColor = Colors.grey.value..textColor = Colors.white.value,
       DayType()..name = 'Выходной'..backgroundColor = Colors.transparent.value..textColor = Colors.white.value,
-      DayType()..name = 'Рабочий'..backgroundColor = Colors.blue.value..textColor = Colors.white.value,
+      DayType()..name = 'Рабочий'..backgroundColor = Colors.blue.value..textColor = Colors.white.value..startHour = 8..startMinute = 0..endHour = 16..endMinute = 30,
     ];
     for (var d in defaults) {
       await _repository.saveDayType(d);

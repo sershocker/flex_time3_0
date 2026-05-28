@@ -1,18 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'app_router.dart';
+import '../services/sync_service.dart';
+import '../../features/calendar/providers/event_provider.dart';
 
-class MainScreen extends StatelessWidget {
+class MainScreen extends ConsumerStatefulWidget {
   const MainScreen({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
   @override
+  ConsumerState<MainScreen> createState() => _MainScreenState();
+}
+
+class _MainScreenState extends ConsumerState<MainScreen> {
+  @override
+  void initState() {
+    super.initState();
+    //запуск синхронизации
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _performInitialSync();
+    });
+  }
+
+  Future<void> _performInitialSync() async {
+    try {
+      await ref.read(syncServiceProvider).syncEvents();
+      //обновляем события
+      ref.read(eventsProvider.notifier).loadEvents();
+    } catch (e) {
+      debugPrint('Initial sync error: $e');
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: navigationShell,
+      body: widget.navigationShell,
       bottomNavigationBar: NavigationBar(
-        selectedIndex: navigationShell.currentIndex,
+        selectedIndex: widget.navigationShell.currentIndex,
         onDestinationSelected: _onTap,
         destinations: const [
           NavigationDestination(icon: Icon(Icons.calendar_month), label: 'Календарь'),
@@ -26,8 +53,7 @@ class MainScreen extends StatelessWidget {
   }
 
   void _onTap(int index) {
-    if (index == navigationShell.currentIndex) {
-      //ключ по индексу
+    if (index == widget.navigationShell.currentIndex) {
       final navigatorKey = shellNavigatorKeys[index];
       final navigator = navigatorKey.currentState;
 
@@ -35,7 +61,7 @@ class MainScreen extends StatelessWidget {
         navigator.popUntil((route) => route.isFirst);
       }
     } else {
-      navigationShell.goBranch(
+      widget.navigationShell.goBranch(
         index,
         initialLocation: false,
       );

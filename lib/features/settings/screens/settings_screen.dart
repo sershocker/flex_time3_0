@@ -4,6 +4,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../../../core/providers/theme_provider.dart';
 import '../../../core/services/notification_service.dart';
+import '../../../core/services/google_calendar_service.dart';
+import '../../../core/services/sync_service.dart';
+import '../providers/settings_provider.dart';
+import '../../calendar/providers/event_provider.dart';
 
 //провайдеры уведомлений
 final notificationsEnabledProvider = StateProvider<bool>((ref) => false);
@@ -21,8 +25,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isGoogleSyncing = false;
-  bool _isGoogleConnected = false;
-  //НЕ ГОТОВО ДОДЕЛАТЬ СИНХРОНИЗАЦИЯ
+  final GoogleCalendarService _googleCalendarService = GoogleCalendarService();
 
   @override
   void initState() {
@@ -62,14 +65,50 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ref.read(provider.notifier).state = value;
   }
 
-  //план Б
   Future<void> _handleGoogleSync() async {
+    final settings = ref.read(settingsProvider);
+    
     setState(() => _isGoogleSyncing = true);
-    await Future.delayed(const Duration(seconds: 3)); //имитация загрузки
-    setState(() {
-      _isGoogleSyncing = false;
-      _isGoogleConnected = !_isGoogleConnected;
-    });
+    
+    try {
+      if (!settings.googleSyncEnabled) {
+        final success = await _googleCalendarService.signIn();
+        if (success) {
+          final newSettings = settings..googleSyncEnabled = true;
+          await ref.read(settingsProvider.notifier).updateSettings(newSettings);
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Синхронизация включена')),
+            );
+          }
+          
+          // Запуск первой синхронизации
+          await ref.read(syncServiceProvider).syncEvents();
+          ref.read(eventsProvider.notifier).loadEvents();
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Не удалось войти в Google')),
+            );
+          }
+        }
+      } else {
+        await _googleCalendarService.signOut();
+        final newSettings = settings..googleSyncEnabled = false;
+        await ref.read(settingsProvider.notifier).updateSettings(newSettings);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Синхронизация отключена')),
+          );
+        }
+      }
+    } catch (e) {
+      print('Google Sync Error: $e');
+    } finally {
+      if (mounted) setState(() => _isGoogleSyncing = false);
+    }
   }
 
   @override
@@ -83,6 +122,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     final isMondayFirst = ref.watch(firstDayProvider);
     final isNotificationsEnabled = ref.watch(notificationsEnabledProvider);
+    final appSettings = ref.watch(settingsProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Настройки')),
@@ -197,20 +237,51 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           const SizedBox(height: 24),
 
-          //google синхрофазатрон
+          //google синхронизация
           const Text('Синхронизация', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
           const SizedBox(height: 8),
           Card(
-            child: ListTile(
-              leading: const Icon(Icons.sync),
-              title: Text(_isGoogleConnected ? 'Google Аккаунт подключен' : 'Синхронизация с Google'),
-              subtitle: Text(_isGoogleConnected ? 'События сохраняются в облаке' : 'Сохраняйте события и графики'),
-              trailing: _isGoogleSyncing
-                  ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                  : OutlinedButton(
-                onPressed: _handleGoogleSync,
-                child: Text(_isGoogleConnected ? 'Отключить' : 'Войти'),
-              ),
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.sync),
+                  title: Text(appSettings.googleSyncEnabled ? 'Google Аккаунт подключен' : 'Синхронизация с Google'),
+                  subtitle: Text(appSettings.googleSyncEnabled ? 'События сохраняются в облаке' : 'Сохраняйте события и графики'),
+                  trailing: _isGoogleSyncing
+                      ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                      : OutlinedButton(
+                    onPressed: _handleGoogleSync,
+                    child: Text(appSettings.googleSyncEnabled ? 'Отключить' : 'Войти'),
+                  ),
+                ),
+                if (appSettings.googleSyncEnabled) ...[
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.refresh),
+                    title: const Text('Синхронизировать сейчас'),
+                    onTap: _isGoogleSyncing ? null : () async {
+                      setState(() => _isGoogleSyncing = true);
+                      try {
+                        await ref.read(syncServiceProvider).syncEvents();
+                        await ref.read(eventsProvider.notifier).loadEvents();
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Синхронизация завершена')),
+                          );
+                        }
+                      } catch (e) {
+                         if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Ошибка синхронизации: $e')),
+                          );
+                        }
+                      } finally {
+                        if (mounted) setState(() => _isGoogleSyncing = false);
+                      }
+                    },
+                  ),
+                ],
+              ],
             ),
           ),
           const SizedBox(height: 32),

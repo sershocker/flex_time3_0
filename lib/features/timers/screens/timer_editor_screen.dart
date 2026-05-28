@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-import '../models/timer_entity.dart';
-import '../providers/timer_provider.dart';
+import '../../calendar/models/event.dart';
+import '../../calendar/providers/event_provider.dart';
 
 class TimerEditorScreen extends ConsumerStatefulWidget {
-  final TimerEntity? timer;
+  final Event? timer; // This is now an Event
 
   const TimerEditorScreen({super.key, this.timer});
 
@@ -31,12 +31,12 @@ class _TimerEditorScreenState extends ConsumerState<TimerEditorScreen> {
     _titleController = TextEditingController(text: widget.timer?.title ?? '');
     _descController = TextEditingController(text: widget.timer?.description ?? '');
 
-    _startDate = widget.timer?.startDate ?? DateTime.now();
-    _endDate = widget.timer?.endDate ?? DateTime.now().add(const Duration(days: 1));
+    _startDate = widget.timer?.timerStartDate ?? DateTime.now();
+    _endDate = widget.timer?.dateTime ?? DateTime.now().add(const Duration(days: 1));
 
-    _selectedColor = widget.timer != null ? Color(widget.timer!.progressColor) : Colors.blue;
+    _selectedColor = widget.timer != null ? Color(widget.timer!.color) : Colors.blue;
     _selectedViewType = widget.timer?.viewType ?? ViewType.circle;
-    _selectedUnitType = widget.timer?.unitType ?? UnitType.seconds;
+    _selectedUnitType = widget.timer?.unitType ?? UnitType.combined;
   }
 
   Future<void> _pickDateTime({required bool isStart}) async {
@@ -72,7 +72,6 @@ class _TimerEditorScreenState extends ConsumerState<TimerEditorScreen> {
     }
   }
 
-  //палитра цветов
   void _openColorPicker() {
     showDialog(
       context: context,
@@ -114,18 +113,18 @@ class _TimerEditorScreenState extends ConsumerState<TimerEditorScreen> {
         return;
       }
 
-      final newTimer = TimerEntity()
+      final event = widget.timer ?? Event();
+      event
         ..title = _titleController.text
         ..description = _descController.text
-        ..startDate = _startDate
-        ..endDate = _endDate
-        ..progressColor = _selectedColor.value
+        ..timerStartDate = _startDate
+        ..dateTime = _endDate
+        ..color = _selectedColor.value
         ..viewType = _selectedViewType
-        ..unitType = _selectedUnitType;
+        ..unitType = _selectedUnitType
+        ..isTimer = true;
 
-      if (widget.timer != null) newTimer.id = widget.timer!.id;
-
-      ref.read(timersProvider.notifier).addTimer(newTimer);
+      ref.read(eventsProvider.notifier).addEvent(event);
       Navigator.pop(context);
     }
   }
@@ -134,13 +133,13 @@ class _TimerEditorScreenState extends ConsumerState<TimerEditorScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.timer == null ? 'Новый таймер' : 'Редактировать'),
+        title: Text(widget.timer == null ? 'Новый таймер' : 'Редактировать таймер'),
         actions: [
           if (widget.timer != null)
             IconButton(
               icon: const Icon(Icons.delete),
               onPressed: () {
-                ref.read(timersProvider.notifier).deleteTimer(widget.timer!.id);
+                ref.read(eventsProvider.notifier).deleteEvent(widget.timer!.id);
                 Navigator.pop(context);
               },
             )
@@ -157,21 +156,25 @@ class _TimerEditorScreenState extends ConsumerState<TimerEditorScreen> {
               validator: (v) => v!.isEmpty ? 'Введите название' : null,
             ),
             const SizedBox(height: 16),
+            TextFormField(
+              controller: _descController,
+              decoration: const InputDecoration(labelText: 'Описание'),
+              maxLines: 3,
+            ),
+            const SizedBox(height: 16),
 
-            //дата начала
             ListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Дата и время начала'),
+              title: const Text('Начало отсчета'),
               subtitle: Text('${_startDate.day}.${_startDate.month}.${_startDate.year} ${_startDate.hour.toString().padLeft(2, '0')}:${_startDate.minute.toString().padLeft(2, '0')}'),
               trailing: const Icon(Icons.play_circle_outline),
               onTap: () => _pickDateTime(isStart: true),
             ),
             const Divider(),
 
-            //дата завершения
             ListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Дата и время завершения'),
+              title: const Text('Событие (конец таймера)'),
               subtitle: Text('${_endDate.day}.${_endDate.month}.${_endDate.year} ${_endDate.hour.toString().padLeft(2, '0')}:${_endDate.minute.toString().padLeft(2, '0')}'),
               trailing: const Icon(Icons.stop_circle_outlined),
               onTap: () => _pickDateTime(isStart: false),
@@ -189,11 +192,11 @@ class _TimerEditorScreenState extends ConsumerState<TimerEditorScreen> {
             ),
             const SizedBox(height: 16),
 
-            //единицы измерения
             DropdownButtonFormField<UnitType>(
               value: _selectedUnitType,
               decoration: const InputDecoration(labelText: 'Единицы измерения'),
               items: const [
+                DropdownMenuItem(value: UnitType.combined, child: Text('Комбинированный (г/м/д)')),
                 DropdownMenuItem(value: UnitType.seconds, child: Text('Только секунды')),
                 DropdownMenuItem(value: UnitType.minutes, child: Text('Только минуты')),
                 DropdownMenuItem(value: UnitType.hours, child: Text('Только часы')),
@@ -206,10 +209,9 @@ class _TimerEditorScreenState extends ConsumerState<TimerEditorScreen> {
             ),
             const SizedBox(height: 24),
 
-            //выбор цвета
             ListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Цвет таймера'),
+              title: const Text('Цвет'),
               trailing: Container(
                 width: 40,
                 height: 40,

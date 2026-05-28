@@ -96,17 +96,21 @@ class _DayDetailsScreenState extends ConsumerState<DayDetailsScreen> {
     const weekDays = ['понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота', 'воскресенье'];
     const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 
-    // просчет ночных смен для след дня
+    // границы текущего дня
     final startOfDay = DateTime(_currentDate.year, _currentDate.month, _currentDate.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));
 
     final allEvents = ref.watch(eventsProvider);
-    final dayEvents = allEvents
-        .where((e) =>
-    e.dateTime.year == _currentDate.year &&
-        e.dateTime.month == _currentDate.month &&
-        e.dateTime.day == _currentDate.day)
-        .toList()
+    
+    // Фильтрация событий: берем те, что пересекаются с текущим днем
+    final dayEvents = allEvents.where((e) {
+      final eventStart = e.dateTime;
+      final eventEnd = e.isAllDay 
+          ? DateTime(eventStart.year, eventStart.month, eventStart.day).add(const Duration(days: 1))
+          : (e.endTime ?? eventStart.add(const Duration(minutes: 1)));
+      
+      return eventStart.isBefore(endOfDay) && eventEnd.isAfter(startOfDay);
+    }).toList()
       ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
 
     final schedules = ref.watch(shiftSchedulesProvider);
@@ -139,7 +143,6 @@ class _DayDetailsScreenState extends ConsumerState<DayDetailsScreen> {
         ),
         body: Column(
           children: [
-            //дата и стрелки
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
               child: Row(
@@ -163,7 +166,6 @@ class _DayDetailsScreenState extends ConsumerState<DayDetailsScreen> {
 
             const SizedBox(height: 24),
 
-            //середина
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
@@ -181,7 +183,6 @@ class _DayDetailsScreenState extends ConsumerState<DayDetailsScreen> {
                         builder: (context, constraints) {
                           final double width = constraints.maxWidth;
 
-                          //отрезаем все что за пределами
                           double getX(DateTime time) {
                             if (time.isBefore(startOfDay)) return 0.0;
                             if (time.isAfter(endOfDay) || time.isAtSameMomentAs(endOfDay)) return width;
@@ -220,7 +221,6 @@ class _DayDetailsScreenState extends ConsumerState<DayDetailsScreen> {
                                         width: (endX - startX).clamp(4.0, width),
                                         height: 6,
                                         decoration: BoxDecoration(
-                                          //цвет графика
                                           color: Color(schedules.firstWhere((s) => s.id == _visibleTimelineScheduleId).color).withOpacity(0.9),
                                           borderRadius: BorderRadius.circular(3),
                                         ),
@@ -242,22 +242,42 @@ class _DayDetailsScreenState extends ConsumerState<DayDetailsScreen> {
                                   top: lineY - 12, left: sunsetX - 12,
                                   child: const Icon(Icons.nights_stay, color: Colors.indigoAccent, size: 24),
                                 ),
-                                for (var event in dayEvents)
-                                  Positioned(
-                                    top: lineY - 6, left: getX(event.dateTime) - 6,
-                                    child: Tooltip(
-                                      message: event.title,
-                                      child: Container(
-                                        width: 12, height: 12,
-                                        decoration: BoxDecoration(
-                                          color: Color(event.color),
-                                          shape: BoxShape.circle,
-                                          border: Border.all(color: colorScheme.surface, width: 2),
-                                          boxShadow: [BoxShadow(color: Color(event.color).withOpacity(0.8), blurRadius: 4)],
+                                
+                                // Отрисовка событий на ленте
+                                for (var event in dayEvents.where((e) => !e.isAllDay))
+                                  if (event.endTime != null)
+                                    Positioned(
+                                      top: lineY - 3,
+                                      left: getX(event.dateTime),
+                                      child: Tooltip(
+                                        message: event.title,
+                                        child: Container(
+                                          width: (getX(event.endTime!) - getX(event.dateTime)).clamp(4.0, width),
+                                          height: 6,
+                                          decoration: BoxDecoration(
+                                            color: Color(event.color),
+                                            borderRadius: BorderRadius.circular(3),
+                                            boxShadow: [BoxShadow(color: Color(event.color).withOpacity(0.5), blurRadius: 4)],
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  else
+                                    Positioned(
+                                      top: lineY - 6, left: getX(event.dateTime) - 6,
+                                      child: Tooltip(
+                                        message: event.title,
+                                        child: Container(
+                                          width: 12, height: 12,
+                                          decoration: BoxDecoration(
+                                            color: Color(event.color),
+                                            shape: BoxShape.circle,
+                                            border: Border.all(color: colorScheme.surface, width: 2),
+                                            boxShadow: [BoxShadow(color: Color(event.color).withOpacity(0.8), blurRadius: 4)],
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
                                 if (_isToday())
                                   Positioned(
                                     top: lineY - 30, bottom: 20, left: getX(DateTime.now()) - 1,
@@ -322,13 +342,9 @@ class _DayDetailsScreenState extends ConsumerState<DayDetailsScreen> {
                                   Text('ГРАФИКИ СМЕН', style: TextStyle(color: onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
                                   const SizedBox(height: 12),
                                   ...schedules.map((s) {
-
                                     final sShifts = dayShifts.where((a) => a.id.toString().contains('_${s.id}_')).toList();
-
                                     final hasTimedShift = sShifts.any((a) => !a.isAllDay);
-
                                     final primaryShift = sShifts.where((a) => a.startTime.year == _currentDate.year && a.startTime.day == _currentDate.day).firstOrNull ?? sShifts.firstOrNull;
-
                                     final isTransparent = primaryShift != null && primaryShift.color.value == Colors.transparent.value;
 
                                     String shiftName = 'Выходной';
@@ -339,7 +355,6 @@ class _DayDetailsScreenState extends ConsumerState<DayDetailsScreen> {
                                       if (!isTransparent) {
                                         shiftName = primaryShift.subject;
                                         shiftColor = primaryShift.color;
-
                                         if (!primaryShift.isAllDay) {
                                           final start = '${primaryShift.startTime.hour.toString().padLeft(2, '0')}:${primaryShift.startTime.minute.toString().padLeft(2, '0')}';
                                           final end = '${primaryShift.endTime.hour.toString().padLeft(2, '0')}:${primaryShift.endTime.minute.toString().padLeft(2, '0')}';
@@ -376,11 +391,7 @@ class _DayDetailsScreenState extends ConsumerState<DayDetailsScreen> {
                                                     GestureDetector(
                                                       onTap: () {
                                                         setState(() {
-                                                          if (_visibleTimelineScheduleId == s.id) {
-                                                            _visibleTimelineScheduleId = null;
-                                                          } else {
-                                                            _visibleTimelineScheduleId = s.id;
-                                                          }
+                                                          _visibleTimelineScheduleId = (_visibleTimelineScheduleId == s.id) ? null : s.id;
                                                         });
                                                       },
                                                       child: Padding(
@@ -391,7 +402,6 @@ class _DayDetailsScreenState extends ConsumerState<DayDetailsScreen> {
                                                         ),
                                                       ),
                                                     ),
-
                                                   Expanded(
                                                     child: Text(
                                                       s.title,
@@ -442,7 +452,28 @@ class _DayDetailsScreenState extends ConsumerState<DayDetailsScreen> {
                             )
                           else
                             ...dayEvents.map((event) {
-                              final timeStr = '${event.dateTime.hour.toString().padLeft(2, '0')}:${event.dateTime.minute.toString().padLeft(2, '0')}';
+                              // Расчет времени для отображения в списке конкретного дня
+                              DateTime displayStart = event.dateTime.isBefore(startOfDay) ? startOfDay : event.dateTime;
+                              
+                              DateTime displayEnd;
+                              if (event.isAllDay) {
+                                displayEnd = endOfDay;
+                              } else {
+                                final actualEnd = event.endTime ?? event.dateTime.add(const Duration(minutes: 1));
+                                displayEnd = actualEnd.isAfter(endOfDay) ? endOfDay : actualEnd;
+                              }
+
+                              String timeStr;
+                              if (event.isAllDay) {
+                                timeStr = 'Весь день';
+                              } else if (event.endTime == null) {
+                                timeStr = '${displayStart.hour.toString().padLeft(2, '0')}:${displayStart.minute.toString().padLeft(2, '0')}';
+                              } else {
+                                final s = '${displayStart.hour.toString().padLeft(2, '0')}:${displayStart.minute.toString().padLeft(2, '0')}';
+                                final e = '${displayEnd.hour.toString().padLeft(2, '0')}:${displayEnd.minute.toString().padLeft(2, '0')}';
+                                timeStr = '$s - $e';
+                              }
+
                               return Column(
                                 children: [
                                   ListTile(
@@ -474,13 +505,8 @@ class _DayDetailsScreenState extends ConsumerState<DayDetailsScreen> {
           backgroundColor: colorScheme.primary,
           foregroundColor: colorScheme.onPrimary,
           onPressed: () {
-            final newEventDate = DateTime(_currentDate.year, _currentDate.month, _currentDate.day, DateTime.now().hour);
-            final presetEvent = Event()
-              ..title = ''
-              ..dateTime = newEventDate
-              ..color = Colors.blue.value;
-
-            Navigator.push(context, MaterialPageRoute(builder: (context) => EventEditorScreen(event: presetEvent)));
+            final newEventDate = DateTime(_currentDate.year, _currentDate.month, _currentDate.day, DateTime.now().hour, DateTime.now().minute);
+            Navigator.push(context, MaterialPageRoute(builder: (context) => EventEditorScreen(initialDate: newEventDate)));
           },
           child: const Icon(Icons.add),
         ),

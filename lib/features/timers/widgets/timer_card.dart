@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/percent_indicator.dart';
-import '../models/timer_entity.dart';
+import '../../calendar/models/event.dart';
 
 class TimerCard extends StatefulWidget {
-  final TimerEntity timerEntity;
+  final Event event;
   final VoidCallback onTap;
 
-  const TimerCard({super.key, required this.timerEntity, required this.onTap});
+  const TimerCard({super.key, required this.event, required this.onTap});
 
   @override
   State<TimerCard> createState() => _TimerCardState();
@@ -22,10 +22,33 @@ class _TimerCardState extends State<TimerCard> {
     _ticker = Stream.periodic(const Duration(seconds: 1), (_) => DateTime.now());
   }
 
-  String _formatRemainingTime(Duration remaining) {
+  String _formatRemainingTime(Duration remaining, DateTime end) {
     if (remaining.isNegative) return "Завершено";
 
-    switch (widget.timerEntity.unitType) {
+    switch (widget.event.unitType) {
+      case UnitType.combined:
+        final now = DateTime.now();
+        int years = end.year - now.year;
+        int months = end.month - now.month;
+        int days = end.day - now.day;
+
+        if (days < 0) {
+          final previousMonth = DateTime(end.year, end.month, 0);
+          days += previousMonth.day;
+          months--;
+        }
+        if (months < 0) {
+          months += 12;
+          years--;
+        }
+
+        List<String> parts = [];
+        if (years > 0) parts.add('$years л.');
+        if (months > 0) parts.add('$months мес.');
+        if (days > 0) parts.add('$days д.');
+        
+        return parts.isEmpty ? "Меньше дня" : parts.join(' ');
+
       case UnitType.years:
         return '${remaining.inDays ~/ 365} лет';
       case UnitType.months:
@@ -46,8 +69,8 @@ class _TimerCardState extends State<TimerCard> {
 
   @override
   Widget build(BuildContext context) {
-    final start = widget.timerEntity.startDate ?? DateTime.now();
-    final end = widget.timerEntity.endDate ?? DateTime.now().add(const Duration(days: 1));
+    final start = widget.event.timerStartDate ?? DateTime.now();
+    final end = widget.event.dateTime;
     final totalSeconds = end.difference(start).inSeconds;
 
     return GestureDetector(
@@ -61,7 +84,6 @@ class _TimerCardState extends State<TimerCard> {
             builder: (context, snapshot) {
               final now = snapshot.data ?? DateTime.now();
 
-              //если now < start
               if (now.isBefore(start)) {
                 return _buildCardContent(
                   timeString: "Еще не началось",
@@ -77,8 +99,8 @@ class _TimerCardState extends State<TimerCard> {
               if (percent > 1.0) percent = 1.0;
 
               final duration = end.difference(now);
-              final timeString = _formatRemainingTime(duration);
-              final progressColor = Color(widget.timerEntity.progressColor);
+              final timeString = _formatRemainingTime(duration, end);
+              final progressColor = Color(widget.event.color);
 
               return _buildCardContent(
                 timeString: timeString,
@@ -96,14 +118,14 @@ class _TimerCardState extends State<TimerCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(widget.timerEntity.title, style: Theme.of(context).textTheme.titleLarge),
-        if (widget.timerEntity.description?.isNotEmpty ?? false) ...[
+        Text(widget.event.title, style: Theme.of(context).textTheme.titleLarge),
+        if (widget.event.description?.isNotEmpty ?? false) ...[
           const SizedBox(height: 4),
-          Text(widget.timerEntity.description!, style: Theme.of(context).textTheme.bodyMedium),
+          Text(widget.event.description!, style: Theme.of(context).textTheme.bodyMedium),
         ],
         const SizedBox(height: 16),
         Center(
-          child: widget.timerEntity.viewType == ViewType.circle
+          child: widget.event.viewType == ViewType.circle
               ? CircularPercentIndicator(
             radius: 60.0,
             lineWidth: 10.0,

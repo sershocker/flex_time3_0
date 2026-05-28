@@ -167,6 +167,7 @@ const _TimerEntityunitTypeEnumValueMap = {
   'weeks': 4,
   'months': 5,
   'years': 6,
+  'combined': 7,
 };
 const _TimerEntityunitTypeValueEnumMap = {
   0: UnitType.seconds,
@@ -176,6 +177,7 @@ const _TimerEntityunitTypeValueEnumMap = {
   4: UnitType.weeks,
   5: UnitType.months,
   6: UnitType.years,
+  7: UnitType.combined,
 };
 const _TimerEntityviewTypeEnumValueMap = {
   'circle': 0,

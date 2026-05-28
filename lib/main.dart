@@ -8,10 +8,20 @@ import 'core/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await LocalDb.init();
 
-  //init уведомлений
-  await NotificationService().init();
+  // Инициализация БД с обработкой ошибок
+  try {
+    await LocalDb.init();
+  } catch (e) {
+    debugPrint('LocalDb initialization error: $e');
+  }
+
+  // Инициализация уведомлений с обработкой ошибок
+  try {
+    await NotificationService().init();
+  } catch (e) {
+    debugPrint('NotificationService initialization error: $e');
+  }
 
   runApp(
     const ProviderScope(

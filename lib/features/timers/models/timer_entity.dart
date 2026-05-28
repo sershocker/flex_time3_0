@@ -2,7 +2,7 @@ import 'package:isar/isar.dart';
 
 part 'timer_entity.g.dart';
 
-enum UnitType { seconds, minutes, hours, days, weeks, months, years }
+enum UnitType { seconds, minutes, hours, days, weeks, months, years, combined }
 enum ViewType { circle, line }
 
 @collection

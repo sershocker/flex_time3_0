@@ -1,4 +1,4 @@
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 
 part 'day_type.g.dart';
 
@@ -9,14 +9,12 @@ class DayType {
   late String name;
 
   late int backgroundColor;
-
   late int textColor;
 
-  //начало смены время
   int? startHour;
   int? startMinute;
-
-  //конец смены время
   int? endHour;
   int? endMinute;
+
+  bool isWorkDay = true;
 }

@@ -22,37 +22,35 @@ const DayTypeSchema = CollectionSchema(
       name: r'backgroundColor',
       type: IsarType.long,
     ),
-    r'endHour': PropertySchema(
-      id: 1,
-      name: r'endHour',
-      type: IsarType.long,
-    ),
+    r'endHour': PropertySchema(id: 1, name: r'endHour', type: IsarType.long),
     r'endMinute': PropertySchema(
       id: 2,
       name: r'endMinute',
       type: IsarType.long,
     ),
-    r'name': PropertySchema(
+    r'isWorkDay': PropertySchema(
       id: 3,
-      name: r'name',
-      type: IsarType.string,
+      name: r'isWorkDay',
+      type: IsarType.bool,
     ),
+    r'name': PropertySchema(id: 4, name: r'name', type: IsarType.string),
     r'startHour': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'startHour',
       type: IsarType.long,
     ),
     r'startMinute': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'startMinute',
       type: IsarType.long,
     ),
     r'textColor': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'textColor',
       type: IsarType.long,
-    )
+    ),
   },
+
   estimateSize: _dayTypeEstimateSize,
   serialize: _dayTypeSerialize,
   deserialize: _dayTypeDeserialize,
@@ -61,10 +59,11 @@ const DayTypeSchema = CollectionSchema(
   indexes: {},
   links: {},
   embeddedSchemas: {},
+
   getId: _dayTypeGetId,
   getLinks: _dayTypeGetLinks,
   attach: _dayTypeAttach,
-  version: '3.1.0+1',
+  version: '3.3.2',
 );
 
 int _dayTypeEstimateSize(
@@ -86,10 +85,11 @@ void _dayTypeSerialize(
   writer.writeLong(offsets[0], object.backgroundColor);
   writer.writeLong(offsets[1], object.endHour);
   writer.writeLong(offsets[2], object.endMinute);
-  writer.writeString(offsets[3], object.name);
-  writer.writeLong(offsets[4], object.startHour);
-  writer.writeLong(offsets[5], object.startMinute);
-  writer.writeLong(offsets[6], object.textColor);
+  writer.writeBool(offsets[3], object.isWorkDay);
+  writer.writeString(offsets[4], object.name);
+  writer.writeLong(offsets[5], object.startHour);
+  writer.writeLong(offsets[6], object.startMinute);
+  writer.writeLong(offsets[7], object.textColor);
 }
 
 DayType _dayTypeDeserialize(
@@ -103,10 +103,11 @@ DayType _dayTypeDeserialize(
   object.endHour = reader.readLongOrNull(offsets[1]);
   object.endMinute = reader.readLongOrNull(offsets[2]);
   object.id = id;
-  object.name = reader.readString(offsets[3]);
-  object.startHour = reader.readLongOrNull(offsets[4]);
-  object.startMinute = reader.readLongOrNull(offsets[5]);
-  object.textColor = reader.readLong(offsets[6]);
+  object.isWorkDay = reader.readBool(offsets[3]);
+  object.name = reader.readString(offsets[4]);
+  object.startHour = reader.readLongOrNull(offsets[5]);
+  object.startMinute = reader.readLongOrNull(offsets[6]);
+  object.textColor = reader.readLong(offsets[7]);
   return object;
 }
 
@@ -124,12 +125,14 @@ P _dayTypeDeserializeProp<P>(
     case 2:
       return (reader.readLongOrNull(offset)) as P;
     case 3:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 4:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 5:
       return (reader.readLongOrNull(offset)) as P;
     case 6:
+      return (reader.readLongOrNull(offset)) as P;
+    case 7:
       return (reader.readLong(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -159,10 +162,7 @@ extension DayTypeQueryWhereSort on QueryBuilder<DayType, DayType, QWhere> {
 extension DayTypeQueryWhere on QueryBuilder<DayType, DayType, QWhereClause> {
   QueryBuilder<DayType, DayType, QAfterWhereClause> idEqualTo(Id id) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(
-        lower: id,
-        upper: id,
-      ));
+      return query.addWhereClause(IdWhereClause.between(lower: id, upper: id));
     });
   }
 
@@ -188,8 +188,10 @@ extension DayTypeQueryWhere on QueryBuilder<DayType, DayType, QWhereClause> {
     });
   }
 
-  QueryBuilder<DayType, DayType, QAfterWhereClause> idGreaterThan(Id id,
-      {bool include = false}) {
+  QueryBuilder<DayType, DayType, QAfterWhereClause> idGreaterThan(
+    Id id, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.greaterThan(lower: id, includeLower: include),
@@ -197,8 +199,10 @@ extension DayTypeQueryWhere on QueryBuilder<DayType, DayType, QWhereClause> {
     });
   }
 
-  QueryBuilder<DayType, DayType, QAfterWhereClause> idLessThan(Id id,
-      {bool include = false}) {
+  QueryBuilder<DayType, DayType, QAfterWhereClause> idLessThan(
+    Id id, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.lessThan(upper: id, includeUpper: include),
@@ -213,12 +217,14 @@ extension DayTypeQueryWhere on QueryBuilder<DayType, DayType, QWhereClause> {
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(
-        lower: lowerId,
-        includeLower: includeLower,
-        upper: upperId,
-        includeUpper: includeUpper,
-      ));
+      return query.addWhereClause(
+        IdWhereClause.between(
+          lower: lowerId,
+          includeLower: includeLower,
+          upper: upperId,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 }
@@ -226,26 +232,25 @@ extension DayTypeQueryWhere on QueryBuilder<DayType, DayType, QWhereClause> {
 extension DayTypeQueryFilter
     on QueryBuilder<DayType, DayType, QFilterCondition> {
   QueryBuilder<DayType, DayType, QAfterFilterCondition> backgroundColorEqualTo(
-      int value) {
+    int value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'backgroundColor',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'backgroundColor', value: value),
+      );
     });
   }
 
   QueryBuilder<DayType, DayType, QAfterFilterCondition>
-      backgroundColorGreaterThan(
-    int value, {
-    bool include = false,
-  }) {
+  backgroundColorGreaterThan(int value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'backgroundColor',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'backgroundColor',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -254,11 +259,13 @@ extension DayTypeQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'backgroundColor',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'backgroundColor',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -269,39 +276,41 @@ extension DayTypeQueryFilter
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'backgroundColor',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'backgroundColor',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<DayType, DayType, QAfterFilterCondition> endHourIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'endHour',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'endHour'),
+      );
     });
   }
 
   QueryBuilder<DayType, DayType, QAfterFilterCondition> endHourIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'endHour',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'endHour'),
+      );
     });
   }
 
   QueryBuilder<DayType, DayType, QAfterFilterCondition> endHourEqualTo(
-      int? value) {
+    int? value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'endHour',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'endHour', value: value),
+      );
     });
   }
 
@@ -310,11 +319,13 @@ extension DayTypeQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'endHour',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'endHour',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -323,11 +334,13 @@ extension DayTypeQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'endHour',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'endHour',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -338,39 +351,41 @@ extension DayTypeQueryFilter
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'endHour',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'endHour',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<DayType, DayType, QAfterFilterCondition> endMinuteIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'endMinute',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'endMinute'),
+      );
     });
   }
 
   QueryBuilder<DayType, DayType, QAfterFilterCondition> endMinuteIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'endMinute',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'endMinute'),
+      );
     });
   }
 
   QueryBuilder<DayType, DayType, QAfterFilterCondition> endMinuteEqualTo(
-      int? value) {
+    int? value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'endMinute',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'endMinute', value: value),
+      );
     });
   }
 
@@ -379,11 +394,13 @@ extension DayTypeQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'endMinute',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'endMinute',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -392,11 +409,13 @@ extension DayTypeQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'endMinute',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'endMinute',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -407,22 +426,23 @@ extension DayTypeQueryFilter
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'endMinute',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'endMinute',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<DayType, DayType, QAfterFilterCondition> idEqualTo(Id value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'id', value: value),
+      );
     });
   }
 
@@ -431,11 +451,13 @@ extension DayTypeQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'id',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -444,11 +466,13 @@ extension DayTypeQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'id',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -459,13 +483,25 @@ extension DayTypeQueryFilter
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'id',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'id',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DayType, DayType, QAfterFilterCondition> isWorkDayEqualTo(
+    bool value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'isWorkDay', value: value),
+      );
     });
   }
 
@@ -474,11 +510,13 @@ extension DayTypeQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'name',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'name',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -488,12 +526,14 @@ extension DayTypeQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'name',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'name',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -503,12 +543,14 @@ extension DayTypeQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'name',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'name',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -520,14 +562,16 @@ extension DayTypeQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'name',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'name',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -536,11 +580,13 @@ extension DayTypeQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'name',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'name',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -549,79 +595,85 @@ extension DayTypeQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'name',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'name',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DayType, DayType, QAfterFilterCondition> nameContains(
-      String value,
-      {bool caseSensitive = true}) {
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'name',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'name',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DayType, DayType, QAfterFilterCondition> nameMatches(
-      String pattern,
-      {bool caseSensitive = true}) {
+    String pattern, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'name',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'name',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DayType, DayType, QAfterFilterCondition> nameIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'name',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'name', value: ''),
+      );
     });
   }
 
   QueryBuilder<DayType, DayType, QAfterFilterCondition> nameIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'name',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'name', value: ''),
+      );
     });
   }
 
   QueryBuilder<DayType, DayType, QAfterFilterCondition> startHourIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'startHour',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'startHour'),
+      );
     });
   }
 
   QueryBuilder<DayType, DayType, QAfterFilterCondition> startHourIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'startHour',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'startHour'),
+      );
     });
   }
 
   QueryBuilder<DayType, DayType, QAfterFilterCondition> startHourEqualTo(
-      int? value) {
+    int? value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'startHour',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'startHour', value: value),
+      );
     });
   }
 
@@ -630,11 +682,13 @@ extension DayTypeQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'startHour',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'startHour',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -643,11 +697,13 @@ extension DayTypeQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'startHour',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'startHour',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -658,39 +714,41 @@ extension DayTypeQueryFilter
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'startHour',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'startHour',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<DayType, DayType, QAfterFilterCondition> startMinuteIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'startMinute',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'startMinute'),
+      );
     });
   }
 
   QueryBuilder<DayType, DayType, QAfterFilterCondition> startMinuteIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'startMinute',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'startMinute'),
+      );
     });
   }
 
   QueryBuilder<DayType, DayType, QAfterFilterCondition> startMinuteEqualTo(
-      int? value) {
+    int? value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'startMinute',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'startMinute', value: value),
+      );
     });
   }
 
@@ -699,11 +757,13 @@ extension DayTypeQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'startMinute',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'startMinute',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -712,11 +772,13 @@ extension DayTypeQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'startMinute',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'startMinute',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -727,23 +789,25 @@ extension DayTypeQueryFilter
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'startMinute',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'startMinute',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<DayType, DayType, QAfterFilterCondition> textColorEqualTo(
-      int value) {
+    int value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'textColor',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'textColor', value: value),
+      );
     });
   }
 
@@ -752,11 +816,13 @@ extension DayTypeQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'textColor',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'textColor',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -765,11 +831,13 @@ extension DayTypeQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'textColor',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'textColor',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -780,13 +848,15 @@ extension DayTypeQueryFilter
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'textColor',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'textColor',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 }
@@ -831,6 +901,18 @@ extension DayTypeQuerySortBy on QueryBuilder<DayType, DayType, QSortBy> {
   QueryBuilder<DayType, DayType, QAfterSortBy> sortByEndMinuteDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'endMinute', Sort.desc);
+    });
+  }
+
+  QueryBuilder<DayType, DayType, QAfterSortBy> sortByIsWorkDay() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isWorkDay', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DayType, DayType, QAfterSortBy> sortByIsWorkDayDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isWorkDay', Sort.desc);
     });
   }
 
@@ -933,6 +1015,18 @@ extension DayTypeQuerySortThenBy
     });
   }
 
+  QueryBuilder<DayType, DayType, QAfterSortBy> thenByIsWorkDay() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isWorkDay', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DayType, DayType, QAfterSortBy> thenByIsWorkDayDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isWorkDay', Sort.desc);
+    });
+  }
+
   QueryBuilder<DayType, DayType, QAfterSortBy> thenByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
@@ -1002,8 +1096,15 @@ extension DayTypeQueryWhereDistinct
     });
   }
 
-  QueryBuilder<DayType, DayType, QDistinct> distinctByName(
-      {bool caseSensitive = true}) {
+  QueryBuilder<DayType, DayType, QDistinct> distinctByIsWorkDay() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isWorkDay');
+    });
+  }
+
+  QueryBuilder<DayType, DayType, QDistinct> distinctByName({
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'name', caseSensitive: caseSensitive);
     });
@@ -1051,6 +1152,12 @@ extension DayTypeQueryProperty
   QueryBuilder<DayType, int?, QQueryOperations> endMinuteProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'endMinute');
+    });
+  }
+
+  QueryBuilder<DayType, bool, QQueryOperations> isWorkDayProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isWorkDay');
     });
   }
 

@@ -17,20 +17,6 @@ subprojects {
 }
 
 subprojects {
-    afterEvaluate {
-        if (plugins.hasPlugin("com.android.library")) {
-            configure<com.android.build.gradle.LibraryExtension> {
-                if (namespace == null) {
-                    namespace = "tech.isar.${project.name.replace("-", "_")}"
-                }
-
-                compileSdk = 34
-            }
-        }
-    }
-}
-
-subprojects {
     project.evaluationDependsOn(":app")
 }
 

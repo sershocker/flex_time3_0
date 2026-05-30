@@ -39,11 +39,7 @@ const AppSettingsSchema = CollectionSchema(
       name: r'isDarkMode',
       type: IsarType.bool,
     ),
-    r'notify1h': PropertySchema(
-      id: 4,
-      name: r'notify1h',
-      type: IsarType.bool,
-    ),
+    r'notify1h': PropertySchema(id: 4, name: r'notify1h', type: IsarType.bool),
     r'notify24h': PropertySchema(
       id: 5,
       name: r'notify24h',
@@ -53,8 +49,9 @@ const AppSettingsSchema = CollectionSchema(
       id: 6,
       name: r'notifyNow',
       type: IsarType.bool,
-    )
+    ),
   },
+
   estimateSize: _appSettingsEstimateSize,
   serialize: _appSettingsSerialize,
   deserialize: _appSettingsDeserialize,
@@ -63,10 +60,11 @@ const AppSettingsSchema = CollectionSchema(
   indexes: {},
   links: {},
   embeddedSchemas: {},
+
   getId: _appSettingsGetId,
   getLinks: _appSettingsGetLinks,
   attach: _appSettingsAttach,
-  version: '3.1.0+1',
+  version: '3.3.2',
 );
 
 int _appSettingsEstimateSize(
@@ -102,9 +100,11 @@ AppSettings _appSettingsDeserialize(
   final object = AppSettings();
   object.colorScheme =
       _AppSettingscolorSchemeValueEnumMap[reader.readByteOrNull(offsets[0])] ??
-          ColorSchemeType.red;
-  object.firstDayOfWeek = _AppSettingsfirstDayOfWeekValueEnumMap[
-          reader.readByteOrNull(offsets[1])] ??
+      ColorSchemeType.red;
+  object.firstDayOfWeek =
+      _AppSettingsfirstDayOfWeekValueEnumMap[reader.readByteOrNull(
+        offsets[1],
+      )] ??
       DayOfWeek.monday;
   object.googleSyncEnabled = reader.readBool(offsets[2]);
   object.id = id;
@@ -123,13 +123,17 @@ P _appSettingsDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (_AppSettingscolorSchemeValueEnumMap[
-              reader.readByteOrNull(offset)] ??
-          ColorSchemeType.red) as P;
+      return (_AppSettingscolorSchemeValueEnumMap[reader.readByteOrNull(
+                offset,
+              )] ??
+              ColorSchemeType.red)
+          as P;
     case 1:
-      return (_AppSettingsfirstDayOfWeekValueEnumMap[
-              reader.readByteOrNull(offset)] ??
-          DayOfWeek.monday) as P;
+      return (_AppSettingsfirstDayOfWeekValueEnumMap[reader.readByteOrNull(
+                offset,
+              )] ??
+              DayOfWeek.monday)
+          as P;
     case 2:
       return (reader.readBool(offset)) as P;
     case 3:
@@ -157,10 +161,7 @@ const _AppSettingscolorSchemeValueEnumMap = {
   2: ColorSchemeType.green,
   3: ColorSchemeType.blue,
 };
-const _AppSettingsfirstDayOfWeekEnumValueMap = {
-  'monday': 0,
-  'sunday': 1,
-};
+const _AppSettingsfirstDayOfWeekEnumValueMap = {'monday': 0, 'sunday': 1};
 const _AppSettingsfirstDayOfWeekValueEnumMap = {
   0: DayOfWeek.monday,
   1: DayOfWeek.sunday,
@@ -175,7 +176,10 @@ List<IsarLinkBase<dynamic>> _appSettingsGetLinks(AppSettings object) {
 }
 
 void _appSettingsAttach(
-    IsarCollection<dynamic> col, Id id, AppSettings object) {
+  IsarCollection<dynamic> col,
+  Id id,
+  AppSettings object,
+) {
   object.id = id;
 }
 
@@ -192,15 +196,13 @@ extension AppSettingsQueryWhere
     on QueryBuilder<AppSettings, AppSettings, QWhereClause> {
   QueryBuilder<AppSettings, AppSettings, QAfterWhereClause> idEqualTo(Id id) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(
-        lower: id,
-        upper: id,
-      ));
+      return query.addWhereClause(IdWhereClause.between(lower: id, upper: id));
     });
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterWhereClause> idNotEqualTo(
-      Id id) {
+    Id id,
+  ) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
@@ -222,8 +224,10 @@ extension AppSettingsQueryWhere
     });
   }
 
-  QueryBuilder<AppSettings, AppSettings, QAfterWhereClause> idGreaterThan(Id id,
-      {bool include = false}) {
+  QueryBuilder<AppSettings, AppSettings, QAfterWhereClause> idGreaterThan(
+    Id id, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.greaterThan(lower: id, includeLower: include),
@@ -231,8 +235,10 @@ extension AppSettingsQueryWhere
     });
   }
 
-  QueryBuilder<AppSettings, AppSettings, QAfterWhereClause> idLessThan(Id id,
-      {bool include = false}) {
+  QueryBuilder<AppSettings, AppSettings, QAfterWhereClause> idLessThan(
+    Id id, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.lessThan(upper: id, includeUpper: include),
@@ -247,12 +253,14 @@ extension AppSettingsQueryWhere
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(
-        lower: lowerId,
-        includeLower: includeLower,
-        upper: upperId,
-        includeUpper: includeUpper,
-      ));
+      return query.addWhereClause(
+        IdWhereClause.between(
+          lower: lowerId,
+          includeLower: includeLower,
+          upper: upperId,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 }
@@ -260,134 +268,131 @@ extension AppSettingsQueryWhere
 extension AppSettingsQueryFilter
     on QueryBuilder<AppSettings, AppSettings, QFilterCondition> {
   QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
-      colorSchemeEqualTo(ColorSchemeType value) {
+  colorSchemeEqualTo(ColorSchemeType value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'colorScheme',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'colorScheme', value: value),
+      );
     });
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
-      colorSchemeGreaterThan(
-    ColorSchemeType value, {
-    bool include = false,
-  }) {
+  colorSchemeGreaterThan(ColorSchemeType value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'colorScheme',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'colorScheme',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
-      colorSchemeLessThan(
-    ColorSchemeType value, {
-    bool include = false,
-  }) {
+  colorSchemeLessThan(ColorSchemeType value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'colorScheme',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'colorScheme',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
-      colorSchemeBetween(
+  colorSchemeBetween(
     ColorSchemeType lower,
     ColorSchemeType upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'colorScheme',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'colorScheme',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
-      firstDayOfWeekEqualTo(DayOfWeek value) {
+  firstDayOfWeekEqualTo(DayOfWeek value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'firstDayOfWeek',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'firstDayOfWeek', value: value),
+      );
     });
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
-      firstDayOfWeekGreaterThan(
-    DayOfWeek value, {
-    bool include = false,
-  }) {
+  firstDayOfWeekGreaterThan(DayOfWeek value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'firstDayOfWeek',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'firstDayOfWeek',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
-      firstDayOfWeekLessThan(
-    DayOfWeek value, {
-    bool include = false,
-  }) {
+  firstDayOfWeekLessThan(DayOfWeek value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'firstDayOfWeek',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'firstDayOfWeek',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
-      firstDayOfWeekBetween(
+  firstDayOfWeekBetween(
     DayOfWeek lower,
     DayOfWeek upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'firstDayOfWeek',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'firstDayOfWeek',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
-      googleSyncEnabledEqualTo(bool value) {
+  googleSyncEnabledEqualTo(bool value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'googleSyncEnabled',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'googleSyncEnabled', value: value),
+      );
     });
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition> idEqualTo(
-      Id value) {
+    Id value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'id', value: value),
+      );
     });
   }
 
@@ -396,11 +401,13 @@ extension AppSettingsQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'id',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -409,11 +416,13 @@ extension AppSettingsQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'id',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -424,53 +433,52 @@ extension AppSettingsQueryFilter
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'id',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'id',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
-      isDarkModeEqualTo(bool value) {
+  isDarkModeEqualTo(bool value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'isDarkMode',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'isDarkMode', value: value),
+      );
     });
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition> notify1hEqualTo(
-      bool value) {
+    bool value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'notify1h',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'notify1h', value: value),
+      );
     });
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
-      notify24hEqualTo(bool value) {
+  notify24hEqualTo(bool value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'notify24h',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'notify24h', value: value),
+      );
     });
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
-      notifyNowEqualTo(bool value) {
+  notifyNowEqualTo(bool value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'notifyNow',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'notifyNow', value: value),
+      );
     });
   }
 }
@@ -502,21 +510,21 @@ extension AppSettingsQuerySortBy
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
-      sortByFirstDayOfWeekDesc() {
+  sortByFirstDayOfWeekDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'firstDayOfWeek', Sort.desc);
     });
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
-      sortByGoogleSyncEnabled() {
+  sortByGoogleSyncEnabled() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'googleSyncEnabled', Sort.asc);
     });
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
-      sortByGoogleSyncEnabledDesc() {
+  sortByGoogleSyncEnabledDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'googleSyncEnabled', Sort.desc);
     });
@@ -592,21 +600,21 @@ extension AppSettingsQuerySortThenBy
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
-      thenByFirstDayOfWeekDesc() {
+  thenByFirstDayOfWeekDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'firstDayOfWeek', Sort.desc);
     });
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
-      thenByGoogleSyncEnabled() {
+  thenByGoogleSyncEnabled() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'googleSyncEnabled', Sort.asc);
     });
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
-      thenByGoogleSyncEnabledDesc() {
+  thenByGoogleSyncEnabledDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'googleSyncEnabled', Sort.desc);
     });
@@ -688,7 +696,7 @@ extension AppSettingsQueryWhereDistinct
   }
 
   QueryBuilder<AppSettings, AppSettings, QDistinct>
-      distinctByGoogleSyncEnabled() {
+  distinctByGoogleSyncEnabled() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'googleSyncEnabled');
     });
@@ -728,21 +736,21 @@ extension AppSettingsQueryProperty
   }
 
   QueryBuilder<AppSettings, ColorSchemeType, QQueryOperations>
-      colorSchemeProperty() {
+  colorSchemeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'colorScheme');
     });
   }
 
   QueryBuilder<AppSettings, DayOfWeek, QQueryOperations>
-      firstDayOfWeekProperty() {
+  firstDayOfWeekProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'firstDayOfWeek');
     });
   }
 
   QueryBuilder<AppSettings, bool, QQueryOperations>
-      googleSyncEnabledProperty() {
+  googleSyncEnabledProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'googleSyncEnabled');
     });

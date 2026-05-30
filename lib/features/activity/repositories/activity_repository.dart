@@ -1,4 +1,4 @@
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import '../../../core/database/local_db.dart';
 import '../models/activity.dart';
 import '../models/activity_type.dart';

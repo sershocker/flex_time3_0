@@ -34,8 +34,8 @@ dependencies:
   # State Management
   flutter_riverpod: ^2.5.1
   # Local Database (Isar)
-  isar: ^3.1.0
-  isar_flutter_libs: ^3.1.0
+  isar_community: ^3.3.2
+  isar_community_flutter_libs: ^3.3.2
   path_provider: ^2.1.2
   # Navigation
   go_router: ^13.2.0
@@ -64,7 +64,7 @@ dev_dependencies:
   flutter_launcher_icons: ^0.13.1
   # Code generation for Isar
   build_runner: ^2.4.8
-  isar_generator: ^3.1.0
+  isar_community_generator: ^3.3.2
 
 flutter:
   uses-material-design: true

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 
 import '../models/activity.dart';
 import '../models/activity_type.dart';
@@ -9,7 +10,7 @@ import '../providers/activity_stats_provider.dart';
 import '../utils/icon_mapper.dart';
 import 'activity_session_editor_screen.dart';
 
-//ериоды фильтрации
+// периоды фильтрации
 enum StatsPeriod { day, week, month }
 
 class ActivityStatisticsScreen extends ConsumerStatefulWidget {
@@ -22,6 +23,7 @@ class ActivityStatisticsScreen extends ConsumerStatefulWidget {
 class _ActivityStatisticsScreenState extends ConsumerState<ActivityStatisticsScreen> {
   StatsPeriod _selectedPeriod = StatsPeriod.day;
   bool _showUntracked = false;
+  DateTime _focusedDate = DateTime.now();
 
   //формат времени в норм вид
   String _formatDuration(Duration d) {
@@ -32,6 +34,42 @@ class _ActivityStatisticsScreenState extends ConsumerState<ActivityStatisticsScr
     if (h > 0) return '${h}ч ${m}м';
     if (m > 0) return '${m}м ${s}с';
     return '${s}с';
+  }
+
+  void _movePeriod(int delta) {
+    setState(() {
+      switch (_selectedPeriod) {
+        case StatsPeriod.day:
+          _focusedDate = _focusedDate.add(Duration(days: delta));
+          break;
+        case StatsPeriod.week:
+          _focusedDate = _focusedDate.add(Duration(days: delta * 7));
+          break;
+        case StatsPeriod.month:
+          _focusedDate = DateTime(_focusedDate.year, _focusedDate.month + delta, 1);
+          break;
+      }
+    });
+  }
+
+  String _getPeriodLabel() {
+    switch (_selectedPeriod) {
+      case StatsPeriod.day:
+        final now = DateTime.now();
+        if (_focusedDate.year == now.year && _focusedDate.month == now.month && _focusedDate.day == now.day) {
+          return 'Сегодня, ${DateFormat('d MMMM', 'ru').format(_focusedDate)}';
+        }
+        return DateFormat('d MMMM yyyy', 'ru').format(_focusedDate);
+      case StatsPeriod.week:
+        final start = _focusedDate.subtract(Duration(days: _focusedDate.weekday - 1));
+        final end = start.add(const Duration(days: 6));
+        if (start.month == end.month) {
+          return '${DateFormat('d', 'ru').format(start)} - ${DateFormat('d MMMM yyyy', 'ru').format(end)}';
+        }
+        return '${DateFormat('d MMM', 'ru').format(start)} - ${DateFormat('d MMM yyyy', 'ru').format(end)}';
+      case StatsPeriod.month:
+        return DateFormat('MMMM yyyy', 'ru').format(_focusedDate);
+    }
   }
 
   @override
@@ -69,26 +107,32 @@ class _ActivityStatisticsScreenState extends ConsumerState<ActivityStatisticsScr
 
   //вкладка с диаграммой
   Widget _buildAnalyticsTab(List<Activity> history, List<ActivityType> types) {
-    final now = DateTime.now();
     DateTime periodStart;
+    DateTime periodEnd;
 
     //определяем начало периода
     switch (_selectedPeriod) {
       case StatsPeriod.day:
-        periodStart = DateTime(now.year, now.month, now.day); //с 00:00
+        periodStart = DateTime(_focusedDate.year, _focusedDate.month, _focusedDate.day);
+        periodEnd = periodStart.add(const Duration(days: 1));
         break;
       case StatsPeriod.week:
-        int daysToSubtract = now.weekday - 1; // понед = 1
-        periodStart = DateTime(now.year, now.month, now.day).subtract(Duration(days: daysToSubtract));
+        int daysToSubtract = _focusedDate.weekday - 1;
+        periodStart = DateTime(_focusedDate.year, _focusedDate.month, _focusedDate.day).subtract(Duration(days: daysToSubtract));
+        periodEnd = periodStart.add(const Duration(days: 7));
         break;
       case StatsPeriod.month:
-        periodStart = DateTime(now.year, now.month, 1);
+        periodStart = DateTime(_focusedDate.year, _focusedDate.month, 1);
+        periodEnd = DateTime(_focusedDate.year, _focusedDate.month + 1, 1);
         break;
     }
 
-    //конец периода ограничен сегодняшим сейчашним
-    DateTime periodEnd = now;
-    Duration totalPeriodDuration = periodEnd.difference(periodStart);
+    // Если период включает "сегодня", ограничиваем конец текущим моментом для расчета свободного времени
+    final now = DateTime.now();
+    DateTime effectiveEnd = periodEnd.isAfter(now) ? now : periodEnd;
+    if (effectiveEnd.isBefore(periodStart)) effectiveEnd = periodStart;
+
+    Duration totalPeriodDuration = effectiveEnd.difference(periodStart);
 
     //время для каждой активности в окне
     final Map<int, Duration> totals = {};
@@ -132,9 +176,40 @@ class _ActivityStatisticsScreenState extends ConsumerState<ActivityStatisticsScr
                 ],
                 selected: {_selectedPeriod},
                 onSelectionChanged: (Set<StatsPeriod> newSelection) {
-                  setState(() => _selectedPeriod = newSelection.first);
+                  setState(() {
+                    _selectedPeriod = newSelection.first;
+                    _focusedDate = DateTime.now(); // сброс даты при смене масштаба
+                  });
                 },
                 style: const ButtonStyle(visualDensity: VisualDensity.compact),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.chevron_left),
+                    onPressed: () => _movePeriod(-1),
+                    tooltip: 'Назад',
+                  ),
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => setState(() => _focusedDate = DateTime.now()),
+                      child: Center(
+                        child: Text(
+                          _getPeriodLabel(),
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.chevron_right),
+                    onPressed: () => _movePeriod(1),
+                    tooltip: 'Вперед',
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               SwitchListTile(
@@ -184,9 +259,14 @@ class _ActivityStatisticsScreenState extends ConsumerState<ActivityStatisticsScr
   List<PieChartSectionData> _buildChartSections(Map<int, Duration> totals, List<ActivityType> types, Duration untracked, Duration baseDuration) {
     List<PieChartSectionData> sections = [];
 
+    if (baseDuration.inSeconds == 0) return sections;
+
     // псевдо активности графика
     totals.forEach((typeId, duration) {
-      final type = types.firstWhere((t) => t.id == typeId);
+      final type = types.firstWhere(
+        (t) => t.id == typeId, 
+        orElse: () => ActivityType()..name = '?'..iconCode = ''..color = 0xFF9E9E9E
+      );
       final double percent = (duration.inSeconds / baseDuration.inSeconds) * 100;
 
       if (percent > 0) {
@@ -223,11 +303,16 @@ class _ActivityStatisticsScreenState extends ConsumerState<ActivityStatisticsScr
   List<Widget> _buildLegendItems(Map<int, Duration> totals, List<ActivityType> types, Duration untracked, Duration baseDuration) {
     List<Widget> items = [];
 
+    if (baseDuration.inSeconds == 0) return items;
+
     var sortedEntries = totals.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
     for (var entry in sortedEntries) {
-      final type = types.firstWhere((t) => t.id == entry.key);
+      final type = types.firstWhere(
+        (t) => t.id == entry.key, 
+        orElse: () => ActivityType()..name = '?'..iconCode = ''..color = 0xFF9E9E9E
+      );
       final double percent = (entry.value.inSeconds / baseDuration.inSeconds) * 100;
 
       items.add(ListTile(
@@ -264,10 +349,13 @@ class _ActivityStatisticsScreenState extends ConsumerState<ActivityStatisticsScr
   Widget _buildHistoryList(List<Activity> history, List<ActivityType> types) {
     if (history.isEmpty) return const Center(child: Text('История пуста'));
 
+    // Сортировка по убыванию времени
+    final sortedHistory = List<Activity>.from(history)..sort((a, b) => b.startTime.compareTo(a.startTime));
+
     return ListView.builder(
-      itemCount: history.length,
+      itemCount: sortedHistory.length,
       itemBuilder: (context, index) {
-        final act = history[index];
+        final act = sortedHistory[index];
         final type = types.firstWhere((t) => t.id == act.typeId, orElse: () => types.first);
 
         final duration = act.endTime != null ? act.endTime!.difference(act.startTime) : Duration.zero;
@@ -278,7 +366,7 @@ class _ActivityStatisticsScreenState extends ConsumerState<ActivityStatisticsScr
             child: Icon(getIconData(type.iconCode), color: Color(type.color)),
           ),
           title: Text(type.name),
-          subtitle: Text('${act.startTime.day}.${act.startTime.month}.${act.startTime.year}  ${act.startTime.hour.toString().padLeft(2, '0')}:${act.startTime.minute.toString().padLeft(2, '0')}'),
+          subtitle: Text(DateFormat('dd.MM.yyyy  HH:mm', 'ru').format(act.startTime)),
           trailing: Text(_formatDuration(duration), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
 
           onTap: () {

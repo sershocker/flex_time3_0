@@ -109,9 +109,6 @@ class _ActivityTypeEditorScreenState extends ConsumerState<ActivityTypeEditorScr
                     trailing: CircleAvatar(backgroundColor: _selectedColor),
                     onTap: _openColorPicker,
                   ),
-                  const SizedBox(height: 32),
-
-                  const Text('Предпросмотр', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 16),
                   Center(
                     child: Container(

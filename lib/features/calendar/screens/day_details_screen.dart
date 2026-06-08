@@ -474,22 +474,48 @@ class _DayDetailsScreenState extends ConsumerState<DayDetailsScreen> {
                                 timeStr = '$s - $e';
                               }
 
-                              return Column(
-                                children: [
-                                  ListTile(
-                                    leading: Container(
-                                      width: 12, height: 12,
-                                      decoration: BoxDecoration(color: Color(event.color), shape: BoxShape.circle),
+                              Color? backgroundColor;
+                              if (event.type == EventType.holiday) {
+                                backgroundColor = Colors.yellow.withOpacity(0.2);
+                              } else if (event.type == EventType.task) {
+                                backgroundColor = Colors.green.withOpacity(0.15);
+                              }
+
+                              return Container(
+                                color: backgroundColor,
+                                child: Column(
+                                  children: [
+                                    ListTile(
+                                      leading: event.type == EventType.task
+                                          ? Checkbox(
+                                              value: event.isCompleted,
+                                              activeColor: Colors.green,
+                                              onChanged: (val) {
+                                                event.isCompleted = val ?? false;
+                                                ref.read(eventsProvider.notifier).updateEvent(event);
+                                              },
+                                            )
+                                          : Container(
+                                              width: 12, height: 12,
+                                              margin: const EdgeInsets.symmetric(horizontal: 16),
+                                              decoration: BoxDecoration(color: Color(event.color), shape: BoxShape.circle),
+                                            ),
+                                      title: Opacity(
+                                        opacity: event.isCompleted ? 0.5 : 1.0,
+                                        child: Text(event.title, style: TextStyle(fontWeight: FontWeight.bold, color: onSurface)),
+                                      ),
+                                      subtitle: Opacity(
+                                        opacity: event.isCompleted ? 0.5 : 1.0,
+                                        child: Text(timeStr, style: TextStyle(color: onSurfaceVariant)),
+                                      ),
+                                      trailing: Icon(Icons.chevron_right, color: onSurfaceVariant),
+                                      onTap: () {
+                                        Navigator.push(context, MaterialPageRoute(builder: (context) => EventEditorScreen(event: event)));
+                                      },
                                     ),
-                                    title: Text(event.title, style: TextStyle(fontWeight: FontWeight.bold, color: onSurface)),
-                                    subtitle: Text(timeStr, style: TextStyle(color: onSurfaceVariant)),
-                                    trailing: Icon(Icons.chevron_right, color: onSurfaceVariant),
-                                    onTap: () {
-                                      Navigator.push(context, MaterialPageRoute(builder: (context) => EventEditorScreen(event: event)));
-                                    },
-                                  ),
-                                  Divider(color: onSurface.withOpacity(0.1), height: 1),
-                                ],
+                                    Divider(color: onSurface.withOpacity(0.1), height: 1),
+                                  ],
+                                ),
                               );
                             }).toList(),
                         ],

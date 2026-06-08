@@ -169,7 +169,7 @@ class _DayTypeEditorScreenState extends ConsumerState<DayTypeEditorScreen> {
                 children: [
                   TextFormField(
                     controller: _nameController,
-                    decoration: const InputDecoration(labelText: 'Название (напр. "День")'),
+                    decoration: const InputDecoration(labelText: 'Название'),
                     validator: (v) => v!.isEmpty ? 'Обязательное поле' : null,
                     onChanged: (_) => setState(() {}),
                   ),
@@ -208,10 +208,7 @@ class _DayTypeEditorScreenState extends ConsumerState<DayTypeEditorScreen> {
                       if (picked != null) setState(() => _endTime = picked);
                     },
                   ),
-                  const SizedBox(height: 32),
-
                   //готовый круг
-                  const Text('Предпросмотр', style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 16),
                   Center(
                     child: Container(

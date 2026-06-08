@@ -40,6 +40,105 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     super.dispose();
   }
 
+  void _showAddEventMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      builder: (context) {
+        return Container(
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildMenuOption(
+                  context,
+                  icon: Icons.event,
+                  label: 'Событие',
+                  type: EventType.event,
+                  color: Colors.blue,
+                ),
+                _buildMenuOption(
+                  context,
+                  icon: Icons.cake,
+                  label: 'Праздник',
+                  type: EventType.holiday,
+                  color: Colors.orange,
+                ),
+                _buildMenuOption(
+                  context,
+                  icon: Icons.check_circle_outline,
+                  label: 'Задача',
+                  type: EventType.task,
+                  color: Colors.green,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMenuOption(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required EventType type,
+    required Color color,
+  }) {
+    return InkWell(
+      onTap: () {
+        Navigator.pop(context);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EventEditorScreen(initialType: type),
+          ),
+        );
+      },
+      borderRadius: BorderRadius.circular(20),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(icon, size: 36, color: color),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final appointments = ref.watch(combinedCalendarProvider);
@@ -164,9 +263,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: isYearView || !_isEventsExpanded ? null : FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const EventEditorScreen()));
-        },
+        onPressed: () => _showAddEventMenu(context),
         icon: const Icon(Icons.add),
         label: const Text('Добавить', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
       ),
@@ -206,7 +303,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     if (upcomingEvents.isEmpty) {
       return Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
             Icon(Icons.event_available, size: 48, color: Colors.grey.withOpacity(0.5)),
             const SizedBox(height: 8),
@@ -225,24 +322,53 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         final dateStr = '${event.dateTime.day.toString().padLeft(2, '0')}.${event.dateTime.month.toString().padLeft(2, '0')}.${event.dateTime.year}';
         final timeStr = '${event.dateTime.hour.toString().padLeft(2, '0')}:${event.dateTime.minute.toString().padLeft(2, '0')}';
 
-        return ListTile(
-          leading: Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(
-              color: Color(event.color),
-              shape: BoxShape.circle,
+        Color? backgroundColor;
+        if (event.type == EventType.holiday) {
+          backgroundColor = Colors.yellow.withOpacity(0.2);
+        } else if (event.type == EventType.task) {
+          backgroundColor = Colors.green.withOpacity(0.15);
+        }
+
+        return Container(
+          color: backgroundColor,
+          child: ListTile(
+            leading: event.type == EventType.task
+                ? Checkbox(
+                    value: event.isCompleted,
+                    activeColor: Colors.green,
+                    onChanged: (val) {
+                      event.isCompleted = val ?? false;
+                      ref.read(eventsProvider.notifier).updateEvent(event);
+                    },
+                  )
+                : Container(
+                    width: 12,
+                    height: 12,
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Color(event.color),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+            title: Opacity(
+              opacity: event.isCompleted ? 0.5 : 1.0,
+              child: Text(
+                event.title,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
+            subtitle: Opacity(
+              opacity: event.isCompleted ? 0.5 : 1.0,
+              child: Text('$dateStr в $timeStr'),
+            ),
+            trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => EventEditorScreen(event: event)),
+              );
+            },
           ),
-          title: Text(event.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-          subtitle: Text('$dateStr в $timeStr'),
-          trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => EventEditorScreen(event: event)),
-            );
-          },
         );
       },
     );

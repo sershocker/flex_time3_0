@@ -104,7 +104,7 @@ class _ShiftTemplateEditorScreenState extends ConsumerState<ShiftTemplateEditorS
               key: _formKey,
               child: TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Название шаблона (напр. "Сутки через трое")'),
+                decoration: const InputDecoration(labelText: 'Название шаблона'),
                 validator: (v) => v!.isEmpty ? 'Введите название' : null,
               ),
             ),

@@ -46,67 +46,78 @@ const EventSchema = CollectionSchema(
     ),
     r'iCalUID': PropertySchema(id: 7, name: r'iCalUID', type: IsarType.string),
     r'isAllDay': PropertySchema(id: 8, name: r'isAllDay', type: IsarType.bool),
-    r'isDeletedLocally': PropertySchema(
+    r'isCompleted': PropertySchema(
       id: 9,
+      name: r'isCompleted',
+      type: IsarType.bool,
+    ),
+    r'isDeletedLocally': PropertySchema(
+      id: 10,
       name: r'isDeletedLocally',
       type: IsarType.bool,
     ),
-    r'isTimer': PropertySchema(id: 10, name: r'isTimer', type: IsarType.bool),
+    r'isTimer': PropertySchema(id: 11, name: r'isTimer', type: IsarType.bool),
     r'lastModifiedLocally': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'lastModifiedLocally',
       type: IsarType.dateTime,
     ),
     r'lastSyncedAt': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'lastSyncedAt',
       type: IsarType.dateTime,
     ),
     r'location': PropertySchema(
-      id: 13,
+      id: 14,
       name: r'location',
       type: IsarType.string,
     ),
     r'needsSync': PropertySchema(
-      id: 14,
+      id: 15,
       name: r'needsSync',
       type: IsarType.bool,
     ),
     r'notificationsEnabled': PropertySchema(
-      id: 15,
+      id: 16,
       name: r'notificationsEnabled',
       type: IsarType.bool,
     ),
     r'originalStartTime': PropertySchema(
-      id: 16,
+      id: 17,
       name: r'originalStartTime',
       type: IsarType.dateTime,
     ),
     r'recurrenceRule': PropertySchema(
-      id: 17,
+      id: 18,
       name: r'recurrenceRule',
       type: IsarType.string,
     ),
     r'recurringEventId': PropertySchema(
-      id: 18,
+      id: 19,
       name: r'recurringEventId',
       type: IsarType.string,
     ),
-    r'status': PropertySchema(id: 19, name: r'status', type: IsarType.string),
+    r'status': PropertySchema(id: 20, name: r'status', type: IsarType.string),
     r'timerStartDate': PropertySchema(
-      id: 20,
+      id: 21,
       name: r'timerStartDate',
       type: IsarType.dateTime,
     ),
-    r'title': PropertySchema(id: 21, name: r'title', type: IsarType.string),
+    r'title': PropertySchema(id: 22, name: r'title', type: IsarType.string),
+    r'type': PropertySchema(
+      id: 23,
+      name: r'type',
+      type: IsarType.byte,
+      enumMap: _EventtypeEnumValueMap,
+    ),
     r'unitType': PropertySchema(
-      id: 22,
+      id: 24,
       name: r'unitType',
       type: IsarType.byte,
       enumMap: _EventunitTypeEnumValueMap,
     ),
     r'viewType': PropertySchema(
-      id: 23,
+      id: 25,
       name: r'viewType',
       type: IsarType.byte,
       enumMap: _EventviewTypeEnumValueMap,
@@ -122,8 +133,8 @@ const EventSchema = CollectionSchema(
     r'googleEventId': IndexSchema(
       id: 4054929391187647835,
       name: r'googleEventId',
-      unique: true,
-      replace: true,
+      unique: false,
+      replace: false,
       properties: [
         IndexPropertySchema(
           name: r'googleEventId',
@@ -221,21 +232,23 @@ void _eventSerialize(
   writer.writeString(offsets[6], object.googleEventId);
   writer.writeString(offsets[7], object.iCalUID);
   writer.writeBool(offsets[8], object.isAllDay);
-  writer.writeBool(offsets[9], object.isDeletedLocally);
-  writer.writeBool(offsets[10], object.isTimer);
-  writer.writeDateTime(offsets[11], object.lastModifiedLocally);
-  writer.writeDateTime(offsets[12], object.lastSyncedAt);
-  writer.writeString(offsets[13], object.location);
-  writer.writeBool(offsets[14], object.needsSync);
-  writer.writeBool(offsets[15], object.notificationsEnabled);
-  writer.writeDateTime(offsets[16], object.originalStartTime);
-  writer.writeString(offsets[17], object.recurrenceRule);
-  writer.writeString(offsets[18], object.recurringEventId);
-  writer.writeString(offsets[19], object.status);
-  writer.writeDateTime(offsets[20], object.timerStartDate);
-  writer.writeString(offsets[21], object.title);
-  writer.writeByte(offsets[22], object.unitType.index);
-  writer.writeByte(offsets[23], object.viewType.index);
+  writer.writeBool(offsets[9], object.isCompleted);
+  writer.writeBool(offsets[10], object.isDeletedLocally);
+  writer.writeBool(offsets[11], object.isTimer);
+  writer.writeDateTime(offsets[12], object.lastModifiedLocally);
+  writer.writeDateTime(offsets[13], object.lastSyncedAt);
+  writer.writeString(offsets[14], object.location);
+  writer.writeBool(offsets[15], object.needsSync);
+  writer.writeBool(offsets[16], object.notificationsEnabled);
+  writer.writeDateTime(offsets[17], object.originalStartTime);
+  writer.writeString(offsets[18], object.recurrenceRule);
+  writer.writeString(offsets[19], object.recurringEventId);
+  writer.writeString(offsets[20], object.status);
+  writer.writeDateTime(offsets[21], object.timerStartDate);
+  writer.writeString(offsets[22], object.title);
+  writer.writeByte(offsets[23], object.type.index);
+  writer.writeByte(offsets[24], object.unitType.index);
+  writer.writeByte(offsets[25], object.viewType.index);
 }
 
 Event _eventDeserialize(
@@ -255,24 +268,28 @@ Event _eventDeserialize(
   object.iCalUID = reader.readStringOrNull(offsets[7]);
   object.id = id;
   object.isAllDay = reader.readBool(offsets[8]);
-  object.isDeletedLocally = reader.readBool(offsets[9]);
-  object.isTimer = reader.readBool(offsets[10]);
-  object.lastModifiedLocally = reader.readDateTime(offsets[11]);
-  object.lastSyncedAt = reader.readDateTimeOrNull(offsets[12]);
-  object.location = reader.readStringOrNull(offsets[13]);
-  object.needsSync = reader.readBool(offsets[14]);
-  object.notificationsEnabled = reader.readBool(offsets[15]);
-  object.originalStartTime = reader.readDateTimeOrNull(offsets[16]);
-  object.recurrenceRule = reader.readStringOrNull(offsets[17]);
-  object.recurringEventId = reader.readStringOrNull(offsets[18]);
-  object.status = reader.readStringOrNull(offsets[19]);
-  object.timerStartDate = reader.readDateTimeOrNull(offsets[20]);
-  object.title = reader.readString(offsets[21]);
+  object.isCompleted = reader.readBool(offsets[9]);
+  object.isDeletedLocally = reader.readBool(offsets[10]);
+  object.isTimer = reader.readBool(offsets[11]);
+  object.lastModifiedLocally = reader.readDateTime(offsets[12]);
+  object.lastSyncedAt = reader.readDateTimeOrNull(offsets[13]);
+  object.location = reader.readStringOrNull(offsets[14]);
+  object.needsSync = reader.readBool(offsets[15]);
+  object.notificationsEnabled = reader.readBool(offsets[16]);
+  object.originalStartTime = reader.readDateTimeOrNull(offsets[17]);
+  object.recurrenceRule = reader.readStringOrNull(offsets[18]);
+  object.recurringEventId = reader.readStringOrNull(offsets[19]);
+  object.status = reader.readStringOrNull(offsets[20]);
+  object.timerStartDate = reader.readDateTimeOrNull(offsets[21]);
+  object.title = reader.readString(offsets[22]);
+  object.type =
+      _EventtypeValueEnumMap[reader.readByteOrNull(offsets[23])] ??
+      EventType.holiday;
   object.unitType =
-      _EventunitTypeValueEnumMap[reader.readByteOrNull(offsets[22])] ??
+      _EventunitTypeValueEnumMap[reader.readByteOrNull(offsets[24])] ??
       UnitType.seconds;
   object.viewType =
-      _EventviewTypeValueEnumMap[reader.readByteOrNull(offsets[23])] ??
+      _EventviewTypeValueEnumMap[reader.readByteOrNull(offsets[25])] ??
       ViewType.circle;
   return object;
 }
@@ -307,32 +324,38 @@ P _eventDeserializeProp<P>(
     case 10:
       return (reader.readBool(offset)) as P;
     case 11:
-      return (reader.readDateTime(offset)) as P;
-    case 12:
-      return (reader.readDateTimeOrNull(offset)) as P;
-    case 13:
-      return (reader.readStringOrNull(offset)) as P;
-    case 14:
       return (reader.readBool(offset)) as P;
+    case 12:
+      return (reader.readDateTime(offset)) as P;
+    case 13:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 14:
+      return (reader.readStringOrNull(offset)) as P;
     case 15:
       return (reader.readBool(offset)) as P;
     case 16:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 17:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 18:
       return (reader.readStringOrNull(offset)) as P;
     case 19:
       return (reader.readStringOrNull(offset)) as P;
     case 20:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 21:
-      return (reader.readString(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 22:
+      return (reader.readString(offset)) as P;
+    case 23:
+      return (_EventtypeValueEnumMap[reader.readByteOrNull(offset)] ??
+              EventType.holiday)
+          as P;
+    case 24:
       return (_EventunitTypeValueEnumMap[reader.readByteOrNull(offset)] ??
               UnitType.seconds)
           as P;
-    case 23:
+    case 25:
       return (_EventviewTypeValueEnumMap[reader.readByteOrNull(offset)] ??
               ViewType.circle)
           as P;
@@ -341,6 +364,12 @@ P _eventDeserializeProp<P>(
   }
 }
 
+const _EventtypeEnumValueMap = {'holiday': 0, 'task': 1, 'event': 2};
+const _EventtypeValueEnumMap = {
+  0: EventType.holiday,
+  1: EventType.task,
+  2: EventType.event,
+};
 const _EventunitTypeEnumValueMap = {
   'seconds': 0,
   'minutes': 1,
@@ -374,65 +403,6 @@ List<IsarLinkBase<dynamic>> _eventGetLinks(Event object) {
 
 void _eventAttach(IsarCollection<dynamic> col, Id id, Event object) {
   object.id = id;
-}
-
-extension EventByIndex on IsarCollection<Event> {
-  Future<Event?> getByGoogleEventId(String? googleEventId) {
-    return getByIndex(r'googleEventId', [googleEventId]);
-  }
-
-  Event? getByGoogleEventIdSync(String? googleEventId) {
-    return getByIndexSync(r'googleEventId', [googleEventId]);
-  }
-
-  Future<bool> deleteByGoogleEventId(String? googleEventId) {
-    return deleteByIndex(r'googleEventId', [googleEventId]);
-  }
-
-  bool deleteByGoogleEventIdSync(String? googleEventId) {
-    return deleteByIndexSync(r'googleEventId', [googleEventId]);
-  }
-
-  Future<List<Event?>> getAllByGoogleEventId(
-    List<String?> googleEventIdValues,
-  ) {
-    final values = googleEventIdValues.map((e) => [e]).toList();
-    return getAllByIndex(r'googleEventId', values);
-  }
-
-  List<Event?> getAllByGoogleEventIdSync(List<String?> googleEventIdValues) {
-    final values = googleEventIdValues.map((e) => [e]).toList();
-    return getAllByIndexSync(r'googleEventId', values);
-  }
-
-  Future<int> deleteAllByGoogleEventId(List<String?> googleEventIdValues) {
-    final values = googleEventIdValues.map((e) => [e]).toList();
-    return deleteAllByIndex(r'googleEventId', values);
-  }
-
-  int deleteAllByGoogleEventIdSync(List<String?> googleEventIdValues) {
-    final values = googleEventIdValues.map((e) => [e]).toList();
-    return deleteAllByIndexSync(r'googleEventId', values);
-  }
-
-  Future<Id> putByGoogleEventId(Event object) {
-    return putByIndex(r'googleEventId', object);
-  }
-
-  Id putByGoogleEventIdSync(Event object, {bool saveLinks = true}) {
-    return putByIndexSync(r'googleEventId', object, saveLinks: saveLinks);
-  }
-
-  Future<List<Id>> putAllByGoogleEventId(List<Event> objects) {
-    return putAllByIndex(r'googleEventId', objects);
-  }
-
-  List<Id> putAllByGoogleEventIdSync(
-    List<Event> objects, {
-    bool saveLinks = true,
-  }) {
-    return putAllByIndexSync(r'googleEventId', objects, saveLinks: saveLinks);
-  }
 }
 
 extension EventQueryWhereSort on QueryBuilder<Event, Event, QWhere> {
@@ -1660,6 +1630,16 @@ extension EventQueryFilter on QueryBuilder<Event, Event, QFilterCondition> {
     });
   }
 
+  QueryBuilder<Event, Event, QAfterFilterCondition> isCompletedEqualTo(
+    bool value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'isCompleted', value: value),
+      );
+    });
+  }
+
   QueryBuilder<Event, Event, QAfterFilterCondition> isDeletedLocallyEqualTo(
     bool value,
   ) {
@@ -2778,6 +2758,65 @@ extension EventQueryFilter on QueryBuilder<Event, Event, QFilterCondition> {
     });
   }
 
+  QueryBuilder<Event, Event, QAfterFilterCondition> typeEqualTo(
+    EventType value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'type', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<Event, Event, QAfterFilterCondition> typeGreaterThan(
+    EventType value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'type',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Event, Event, QAfterFilterCondition> typeLessThan(
+    EventType value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'type',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Event, Event, QAfterFilterCondition> typeBetween(
+    EventType lower,
+    EventType upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'type',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
   QueryBuilder<Event, Event, QAfterFilterCondition> unitTypeEqualTo(
     UnitType value,
   ) {
@@ -3010,6 +3049,18 @@ extension EventQuerySortBy on QueryBuilder<Event, Event, QSortBy> {
     });
   }
 
+  QueryBuilder<Event, Event, QAfterSortBy> sortByIsCompleted() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isCompleted', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Event, Event, QAfterSortBy> sortByIsCompletedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isCompleted', Sort.desc);
+    });
+  }
+
   QueryBuilder<Event, Event, QAfterSortBy> sortByIsDeletedLocally() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isDeletedLocally', Sort.asc);
@@ -3166,6 +3217,18 @@ extension EventQuerySortBy on QueryBuilder<Event, Event, QSortBy> {
     });
   }
 
+  QueryBuilder<Event, Event, QAfterSortBy> sortByType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'type', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Event, Event, QAfterSortBy> sortByTypeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'type', Sort.desc);
+    });
+  }
+
   QueryBuilder<Event, Event, QAfterSortBy> sortByUnitType() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'unitType', Sort.asc);
@@ -3309,6 +3372,18 @@ extension EventQuerySortThenBy on QueryBuilder<Event, Event, QSortThenBy> {
   QueryBuilder<Event, Event, QAfterSortBy> thenByIsAllDayDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isAllDay', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Event, Event, QAfterSortBy> thenByIsCompleted() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isCompleted', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Event, Event, QAfterSortBy> thenByIsCompletedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isCompleted', Sort.desc);
     });
   }
 
@@ -3468,6 +3543,18 @@ extension EventQuerySortThenBy on QueryBuilder<Event, Event, QSortThenBy> {
     });
   }
 
+  QueryBuilder<Event, Event, QAfterSortBy> thenByType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'type', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Event, Event, QAfterSortBy> thenByTypeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'type', Sort.desc);
+    });
+  }
+
   QueryBuilder<Event, Event, QAfterSortBy> thenByUnitType() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'unitType', Sort.asc);
@@ -3558,6 +3645,12 @@ extension EventQueryWhereDistinct on QueryBuilder<Event, Event, QDistinct> {
   QueryBuilder<Event, Event, QDistinct> distinctByIsAllDay() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isAllDay');
+    });
+  }
+
+  QueryBuilder<Event, Event, QDistinct> distinctByIsCompleted() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isCompleted');
     });
   }
 
@@ -3655,6 +3748,12 @@ extension EventQueryWhereDistinct on QueryBuilder<Event, Event, QDistinct> {
     });
   }
 
+  QueryBuilder<Event, Event, QDistinct> distinctByType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'type');
+    });
+  }
+
   QueryBuilder<Event, Event, QDistinct> distinctByUnitType() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'unitType');
@@ -3726,6 +3825,12 @@ extension EventQueryProperty on QueryBuilder<Event, Event, QQueryProperty> {
   QueryBuilder<Event, bool, QQueryOperations> isAllDayProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'isAllDay');
+    });
+  }
+
+  QueryBuilder<Event, bool, QQueryOperations> isCompletedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isCompleted');
     });
   }
 
@@ -3805,6 +3910,12 @@ extension EventQueryProperty on QueryBuilder<Event, Event, QQueryProperty> {
   QueryBuilder<Event, String, QQueryOperations> titleProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'title');
+    });
+  }
+
+  QueryBuilder<Event, EventType, QQueryOperations> typeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'type');
     });
   }
 

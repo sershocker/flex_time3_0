@@ -10,12 +10,14 @@ class EventRepository {
   }
 
   Future<int> saveEvent(Event event) async {
+    print("########Я сохранился ########");
     return await _isar.writeTxn(() async {
       return await _isar.events.put(event);
     });
   }
 
   Future<void> deleteEvent(int id) async {
+    print("########Я делитнулся ########");
     final event = await _isar.events.get(id);
     if (event == null) return;
 
@@ -33,16 +35,19 @@ class EventRepository {
   }
 
   Future<void> hardDeleteEvent(int id) async {
+    print("########Я делитнулся хардово ########");
     await _isar.writeTxn(() async {
       await _isar.events.delete(id);
     });
   }
 
   Future<List<Event>> getEventsToSync() async {
+    print("########Я получил для синхронизации ########");
     return await _isar.events.where().filter().needsSyncEqualTo(true).findAll();
   }
 
   Future<Event?> getEventByGoogleId(String googleId) async {
+    print("########Я получил по гугл id ########");
     return await _isar.events.where().filter().googleEventIdEqualTo(googleId).findFirst();
   }
 }

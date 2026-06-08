@@ -11,7 +11,7 @@
         tools:ignore="ExactAlarm" />
 
     <application
-        android:label="flexitime"
+        android:label="Flexitime"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity

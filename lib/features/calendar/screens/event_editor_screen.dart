@@ -9,8 +9,14 @@ import '../../../core/services/notification_service.dart';
 class EventEditorScreen extends ConsumerStatefulWidget {
   final Event? event; //если null то будет новое
   final DateTime? initialDate; // начальная дата для нового события
+  final EventType? initialType; // Тип при создании
 
-  const EventEditorScreen({super.key, this.event, this.initialDate});
+  const EventEditorScreen({
+    super.key,
+    this.event,
+    this.initialDate,
+    this.initialType,
+  });
 
   @override
   ConsumerState<EventEditorScreen> createState() => _EventEditorScreenState();
@@ -24,6 +30,8 @@ class _EventEditorScreenState extends ConsumerState<EventEditorScreen> {
   DateTime? _endTime;
   late bool _isAllDay;
   late Color _selectedColor;
+  late EventType _type;
+  late bool _isCompleted;
 
   // Timer field
   late bool _isTimer;
@@ -32,15 +40,18 @@ class _EventEditorScreenState extends ConsumerState<EventEditorScreen> {
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.event?.title ?? '');
-    _descController = TextEditingController(text: widget.event?.description ?? '');
-    _selectedDate = widget.event?.dateTime ?? widget.initialDate ?? DateTime.now();
-    _endTime = widget.event?.endTime;
-    _isAllDay = widget.event?.isAllDay ?? false;
-    _selectedColor = widget.event != null ? Color(widget.event!.color) : Colors.blue;
+    final e = widget.event;
+    _type = e?.type ?? widget.initialType ?? EventType.event;
+    _titleController = TextEditingController(text: e?.title ?? '');
+    _descController = TextEditingController(text: e?.description ?? '');
+    _selectedDate = e?.dateTime ?? widget.initialDate ?? DateTime.now();
+    _endTime = e?.endTime;
+    _isAllDay = e?.isAllDay ?? (_type == EventType.holiday);
+    _selectedColor = e != null ? Color(e.color) : Colors.blue;
+    _isCompleted = e?.isCompleted ?? false;
 
-    _isTimer = widget.event?.isTimer ?? false;
-    _notificationsEnabled = widget.event?.notificationsEnabled ?? true;
+    _isTimer = e?.isTimer ?? false;
+    _notificationsEnabled = e?.notificationsEnabled ?? true;
   }
 
   @override
@@ -48,6 +59,43 @@ class _EventEditorScreenState extends ConsumerState<EventEditorScreen> {
     _titleController.dispose();
     _descController.dispose();
     super.dispose();
+  }
+
+  String _getScreenTitle() {
+    final isNew = widget.event == null;
+    switch (_type) {
+      case EventType.holiday:
+        return isNew ? 'Новый праздник' : 'Редактировать праздник';
+      case EventType.task:
+        return isNew ? 'Новая задача' : 'Редактировать задачу';
+      case EventType.event:
+      default:
+        return isNew ? 'Новое событие' : 'Редактировать событие';
+    }
+  }
+
+  String _getTitleLabel() {
+    switch (_type) {
+      case EventType.holiday:
+        return 'Название праздника';
+      case EventType.task:
+        return 'Название задачи';
+      case EventType.event:
+      default:
+        return 'Название события';
+    }
+  }
+
+  String _getColorLabel() {
+    switch (_type) {
+      case EventType.holiday:
+        return 'Цвет праздника';
+      case EventType.task:
+        return 'Цвет задачи';
+      case EventType.event:
+      default:
+        return 'Цвет события';
+    }
   }
 
   Future<void> _pickDate(bool isStart) async {
@@ -63,12 +111,17 @@ class _EventEditorScreenState extends ConsumerState<EventEditorScreen> {
       setState(() {
         if (isStart) {
           _selectedDate = DateTime(
-            pickedDate.year, pickedDate.month, pickedDate.day,
-            _selectedDate.hour, _selectedDate.minute,
+            pickedDate.year,
+            pickedDate.month,
+            pickedDate.day,
+            _selectedDate.hour,
+            _selectedDate.minute,
           );
         } else {
           _endTime = DateTime(
-            pickedDate.year, pickedDate.month, pickedDate.day,
+            pickedDate.year,
+            pickedDate.month,
+            pickedDate.day,
             _endTime?.hour ?? _selectedDate.hour + 1,
             _endTime?.minute ?? _selectedDate.minute,
           );
@@ -88,8 +141,11 @@ class _EventEditorScreenState extends ConsumerState<EventEditorScreen> {
       setState(() {
         if (isStart) {
           _selectedDate = DateTime(
-            _selectedDate.year, _selectedDate.month, _selectedDate.day,
-            pickedTime.hour, pickedTime.minute,
+            _selectedDate.year,
+            _selectedDate.month,
+            _selectedDate.day,
+            pickedTime.hour,
+            pickedTime.minute,
           );
         } else {
           _endTime = DateTime(
@@ -110,7 +166,7 @@ class _EventEditorScreenState extends ConsumerState<EventEditorScreen> {
       builder: (context) {
         Color tempColor = _selectedColor;
         return AlertDialog(
-          title: const Text('Выберите цвет события'),
+          title: Text(_getColorLabel()),
           content: SingleChildScrollView(
             child: ColorPicker(
               pickerColor: _selectedColor,
@@ -138,7 +194,7 @@ class _EventEditorScreenState extends ConsumerState<EventEditorScreen> {
 
   void _saveEvent() async {
     if (_formKey.currentState!.validate()) {
-      if (!_isAllDay && _endTime != null && _endTime!.isBefore(_selectedDate)) {
+      if (_type == EventType.event && !_isAllDay && _endTime != null && _endTime!.isBefore(_selectedDate)) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Время окончания не может быть раньше начала'),
@@ -149,17 +205,30 @@ class _EventEditorScreenState extends ConsumerState<EventEditorScreen> {
       }
 
       final event = widget.event ?? Event();
+      
+      // Логика для разных типов
+      bool finalIsAllDay = _isAllDay;
+      DateTime? finalEndTime = _endTime;
+      
+      if (_type == EventType.holiday) {
+        finalIsAllDay = true;
+        finalEndTime = null;
+      } else if (_type == EventType.task) {
+        finalEndTime = null;
+      }
+
       event
         ..title = _titleController.text
         ..description = _descController.text
         ..dateTime = _selectedDate
-        ..endTime = _isAllDay ? null : _endTime
-        ..isAllDay = _isAllDay
+        ..endTime = finalEndTime
+        ..isAllDay = finalIsAllDay
         ..color = _selectedColor.toARGB32()
+        ..type = _type
+        ..isCompleted = _isCompleted
         ..isTimer = _isTimer
         ..notificationsEnabled = _notificationsEnabled;
 
-      // If it's a new event and timer is enabled, set defaults
       if (widget.event == null && _isTimer) {
         event.timerStartDate = DateTime.now();
         event.unitType = UnitType.combined;
@@ -200,7 +269,7 @@ class _EventEditorScreenState extends ConsumerState<EventEditorScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.event == null ? 'Новое событие' : 'Редактировать событие'),
+        title: Text(_getScreenTitle()),
         actions: [
           if (widget.event != null)
             IconButton(
@@ -221,7 +290,7 @@ class _EventEditorScreenState extends ConsumerState<EventEditorScreen> {
             children: [
               TextFormField(
                 controller: _titleController,
-                decoration: const InputDecoration(labelText: 'Название события'),
+                decoration: InputDecoration(labelText: _getTitleLabel()),
                 validator: (value) => value!.isEmpty ? 'Введите название' : null,
               ),
               const SizedBox(height: 16),
@@ -231,23 +300,40 @@ class _EventEditorScreenState extends ConsumerState<EventEditorScreen> {
                 maxLines: 2,
               ),
               const SizedBox(height: 16),
-              SwitchListTile(
-                title: const Text('Весь день'),
-                value: _isAllDay,
-                onChanged: (val) => setState(() => _isAllDay = val),
-              ),
+              
+              if (_type == EventType.task)
+                CheckboxListTile(
+                  title: const Text('Выполнено'),
+                  value: _isCompleted,
+                  onChanged: (val) => setState(() => _isCompleted = val ?? false),
+                ),
+
+              if (_type == EventType.event)
+                SwitchListTile(
+                  title: const Text('Весь день'),
+                  value: _isAllDay,
+                  onChanged: (val) => setState(() => _isAllDay = val),
+                ),
+                
               SwitchListTile(
                 title: const Text('Уведомления'),
                 value: _notificationsEnabled,
                 onChanged: (val) => setState(() => _notificationsEnabled = val),
               ),
-              SwitchListTile(
-                title: const Text('Таймер до события'),
-                value: _isTimer,
-                onChanged: (val) => setState(() => _isTimer = val),
-              ),
+              
+              //if (_type != EventType.holiday )
+              if (true)
+                SwitchListTile(
+                  title: const Text('Таймер до события'),
+                  value: _isTimer,
+                  onChanged: (val) => setState(() => _isTimer = val),
+                ),
+                
               const SizedBox(height: 16),
-              const Text('Время события:', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                _type == EventType.task ? 'Срок выполнения:' : 'Время:',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -258,7 +344,7 @@ class _EventEditorScreenState extends ConsumerState<EventEditorScreen> {
                       onPressed: () => _pickDate(true),
                     ),
                   ),
-                  if (!_isAllDay) ...[
+                  if (!(_type == EventType.holiday || _isAllDay)) ...[
                     const SizedBox(width: 16),
                     Expanded(
                       child: OutlinedButton.icon(
@@ -270,7 +356,8 @@ class _EventEditorScreenState extends ConsumerState<EventEditorScreen> {
                   ],
                 ],
               ),
-              if (!_isAllDay) ...[
+              
+              if (_type == EventType.event && !_isAllDay) ...[
                 const SizedBox(height: 16),
                 const Text('Конец:', style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
@@ -299,10 +386,11 @@ class _EventEditorScreenState extends ConsumerState<EventEditorScreen> {
                   ],
                 ),
               ],
+              
               const SizedBox(height: 8),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Цвет события'),
+                title: Text(_getColorLabel()),
                 trailing: Container(
                   width: 40,
                   height: 40,

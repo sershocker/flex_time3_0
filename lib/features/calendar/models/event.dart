@@ -4,6 +4,7 @@ part 'event.g.dart';
 
 enum UnitType { seconds, minutes, hours, days, weeks, months, years, combined }
 enum ViewType { circle, line }
+enum EventType { holiday, task, event }
 
 @collection
 class Event {
@@ -13,13 +14,18 @@ class Event {
 
   String? description;
 
-  late DateTime dateTime; //начало события/конец таймера
+  late DateTime dateTime; //начало события/конец таймера/deadline задачи
 
   DateTime? endTime; //конец события
 
   bool isAllDay = false;
 
   late int color;
+
+  @enumerated
+  EventType type = EventType.event;
+
+  bool isCompleted = false; // Для задачи
 
   // Поля таймера
   bool isTimer = false;
@@ -36,7 +42,7 @@ class Event {
 
   // --- Поля для синхронизации с Google Calendar ---
 
-  @Index(unique: true, replace: true)
+  @Index()
   String? googleEventId; // ID в Google Calendar (для API запросов)
 
   String? iCalUID; // Глобальный уникальный ID (для импорта/экспорта)
@@ -76,6 +82,7 @@ class Event {
     viewType = ViewType.circle;
     timerStartDate = DateTime.now();
     status = 'confirmed';
+    type = EventType.event;
   }
 
   // Метод для обновления метки времени при изменении полей

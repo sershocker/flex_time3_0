@@ -148,7 +148,7 @@ class _ShiftScheduleEditorScreenState extends ConsumerState<ShiftScheduleEditorS
           children: [
             TextFormField(
               controller: _titleController,
-              decoration: const InputDecoration(labelText: 'Название события'),
+              decoration: const InputDecoration(labelText: 'Название графика'),
               validator: (v) => v!.isEmpty ? 'Введите название' : null,
             ),
             const SizedBox(height: 16),
@@ -178,7 +178,7 @@ class _ShiftScheduleEditorScreenState extends ConsumerState<ShiftScheduleEditorS
             ),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Конец графика (необязательно)'),
+              title: const Text('Конец графика'),
               subtitle: Text(_endDate != null ? '${_endDate!.day}.${_endDate!.month}.${_endDate!.year}' : 'не выбрано'),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,

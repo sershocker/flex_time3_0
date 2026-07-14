@@ -1,4 +1,4 @@
-# Flex Time 3.0
+# Flex Time
 
 Flex Time 3.0 is a modern, cross-platform productivity application built with Flutter. It combines a calendar, task manager, and habit tracker into a single unified experience, featuring seamless Google Calendar synchronization and local data persistence.
 
